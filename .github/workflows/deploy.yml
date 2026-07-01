@@ -19,15 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+<<<<<<< HEAD
 
+=======
+>>>>>>> 67594ee7087dd845af90d380bae016c52b6b9e13
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+<<<<<<< HEAD
 
       - run: npm ci
       - run: npm run build
 
+=======
+      - run: npm ci
+      - run: npm run build
+>>>>>>> 67594ee7087dd845af90d380bae016c52b6b9e13
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
