@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scroll nativo suave en iOS */
+.scroll-view {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Safe areas para iPhone (notch / Dynamic Island / home indicator) */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Tab bar con safe area */
+.tab-bar {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+/* Letras de himno con mono para alinear acordes */
+.hymn-chords {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  white-space: pre;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Transición suave al expandir */
+.hymn-expand {
+  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+}
