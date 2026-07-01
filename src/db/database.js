@@ -28,7 +28,7 @@ export async function seedDatabase() {
   let data, version
 
   try {
-    const res = await fetch('/data/hymns.json')
+    const res = await fetch(`${import.meta.env.BASE_URL}data/hymns.json`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const json = await res.json()
     // Acepta {version, data:[...]} o directamente [...]
