@@ -17,18 +17,13 @@ export default function App() {
   useEffect(() => {
     const requestFs = () => {
       const el = document.documentElement
-      if (!document.fullscreenElement && el.requestFullscreen) {
-        el.requestFullscreen().catch(() => {})
+      const fn = el.requestFullscreen ?? el.webkitRequestFullscreen ?? el.mozRequestFullScreen
+      if (!document.fullscreenElement && fn) {
+        fn.call(el).catch(() => {})
       }
-      document.removeEventListener('touchstart', requestFs)
-      document.removeEventListener('click', requestFs)
     }
-    document.addEventListener('touchstart', requestFs, { once: true, passive: true })
-    document.addEventListener('click', requestFs, { once: true })
-    return () => {
-      document.removeEventListener('touchstart', requestFs)
-      document.removeEventListener('click', requestFs)
-    }
+    document.addEventListener('touchend', requestFs, { once: true, passive: true })
+    return () => document.removeEventListener('touchend', requestFs)
   }, [])
 
   useEffect(() => {

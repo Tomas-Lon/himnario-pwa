@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, XMarkIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from '@heroicons/react/24/outline'
 import { db } from '../db/database'
 import HymnItem from '../components/HymnItem'
 
@@ -12,9 +12,34 @@ function normalize(str) {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
+function useFullscreen() {
+  const [isFs, setIsFs] = useState(!!document.fullscreenElement)
+  useEffect(() => {
+    const handler = () => setIsFs(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    document.addEventListener('webkitfullscreenchange', handler)
+    return () => {
+      document.removeEventListener('fullscreenchange', handler)
+      document.removeEventListener('webkitfullscreenchange', handler)
+    }
+  }, [])
+  const toggle = () => {
+    if (!document.fullscreenElement) {
+      const el = document.documentElement
+      const fn = el.requestFullscreen ?? el.webkitRequestFullscreen
+      fn?.call(el).catch(() => {})
+    } else {
+      const fn = document.exitFullscreen ?? document.webkitExitFullscreen
+      fn?.call(document).catch(() => {})
+    }
+  }
+  return { isFs, toggle }
+}
+
 export default function HomeScreen() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const { isFs, toggle } = useFullscreen()
 
   // Debounce 300 ms
   useEffect(() => {
@@ -42,7 +67,18 @@ export default function HomeScreen() {
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
-        <h1 className="text-2xl font-bold text-gray-900 mb-3">Himnario</h1>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-2xl font-bold text-gray-900">Himnario</h1>
+          <button
+            onClick={toggle}
+            className="p-1.5 text-gray-400 active:text-gray-700"
+            title={isFs ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          >
+            {isFs
+              ? <ArrowsPointingInIcon className="w-5 h-5" />
+              : <ArrowsPointingOutIcon className="w-5 h-5" />}
+          </button>
+        </div>
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
