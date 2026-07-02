@@ -7,9 +7,15 @@ import {
   XMarkIcon,
   TrashIcon,
   Bars3Icon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline'
 import { db } from '../db/database'
 import HymnItem from '../components/HymnItem'
+import {
+  exportListAsPdf,
+  exportListWithLyricsPdf,
+  exportListWithChordsPdf,
+} from '../utils/exportUtils'
 
 /** Persiste el nuevo orden en Dexie asignando posicion = índice */
 async function saveOrder(listId, orderedHymns) {
@@ -41,6 +47,7 @@ function normalize(str) {
 export default function ListDetailScreen({ listId, onBack }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [localOrder, setLocalOrder] = useState(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   const lista = useLiveQuery(() => db.listas.get(listId), [listId])
 
@@ -78,6 +85,13 @@ export default function ListDetailScreen({ listId, onBack }) {
           <h1 className="flex-1 text-xl font-bold text-gray-900 truncate">
             {lista?.nombre ?? '...'}
           </h1>
+          <button
+            onClick={() => setShowExportMenu(true)}
+            className="flex items-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-3 py-2 rounded-lg active:opacity-70"
+          >
+            <ArrowUpTrayIcon className="w-4 h-4" />
+            Exportar
+          </button>
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-3 py-2 rounded-lg active:opacity-70"
@@ -123,6 +137,14 @@ export default function ListDetailScreen({ listId, onBack }) {
           listId={listId}
           existingIds={(hymnsInList ?? []).map((h) => h.id)}
           onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {showExportMenu && (
+        <ExportMenu
+          lista={lista}
+          hymns={displayed}
+          onClose={() => setShowExportMenu(false)}
         />
       )}
     </div>
@@ -236,6 +258,72 @@ function DraggableList({ items, listId, draggingRef, onOrderChange, onOrderSave,
           />
         </div>
       ))}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────
+   Menú de exportación de la lista
+───────────────────────────────────────────── */
+function ExportMenu({ lista, hymns, onClose }) {
+  if (!lista) return null
+
+  const options = [
+    {
+      label: 'Sin letra',
+      description: 'Solo números y títulos',
+      action: () => { exportListAsPdf(lista, hymns); onClose() },
+    },
+    {
+      label: 'Con letra',
+      description: 'Títulos y texto completo',
+      action: () => { exportListWithLyricsPdf(lista, hymns); onClose() },
+    },
+    {
+      label: 'Con letra y notas',
+      description: 'Acordes/notas + letra',
+      action: () => { exportListWithChordsPdf(lista, hymns); onClose() },
+    },
+  ]
+
+  return (
+    <div
+      className="absolute inset-0 z-50 flex flex-col justify-end bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-t-2xl pb-safe"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-4 pt-4 pb-3 border-b border-ios-separator">
+          <h2 className="text-base font-semibold text-gray-900 text-center">
+            Exportar lista como PDF
+          </h2>
+          <p className="text-xs text-gray-400 text-center mt-0.5">
+            {hymns.length} himno{hymns.length !== 1 ? 's' : ''} · {lista.nombre}
+          </p>
+        </div>
+        <div className="px-4 py-2">
+          {options.map((opt) => (
+            <button
+              key={opt.label}
+              onClick={opt.action}
+              className="w-full flex flex-col items-start px-3 py-3.5 rounded-xl active:bg-gray-100 text-left"
+            >
+              <span className="text-sm font-medium text-gray-900">{opt.label}</span>
+              <span className="text-xs text-gray-400">{opt.description}</span>
+            </button>
+          ))}
+        </div>
+        <div className="px-4 pb-4">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-ios-lightgray text-sm font-medium text-gray-700 active:opacity-70"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
