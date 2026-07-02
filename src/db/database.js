@@ -18,6 +18,14 @@ db.version(1).stores({
   meta: 'key',
 })
 
+db.version(2).stores({
+  hymns: 'id, numero, category, style, musical_key',
+  listas: '++id, folderId, isFavorite',
+  listaHimnos: '[listaId+hymnId], listaId, hymnId',
+  carpetas: '++id',
+  meta: 'key',
+})
+
 /**
  * Carga hymns.json en IndexedDB.
  * - Si la versión del JSON es la misma que está guardada: no hace nada.
@@ -53,7 +61,8 @@ export async function seedDatabase() {
           title: h.title ?? '',
           lyrics: h.lyrics ?? '',
           numero: h.numero ?? h.id,
-          category: h.category ?? null,
+          category: h.category ?? h.style ?? null,
+          style: h.style ?? h.category ?? null,
           musical_key: h.musical_key ?? null,
           musical_notation: h.musical_notation ?? null,
         })
@@ -63,7 +72,8 @@ export async function seedDatabase() {
           title: h.title ?? '',
           lyrics: h.lyrics ?? '',
           numero: h.numero ?? h.id,
-          category: h.category ?? null,
+          category: h.category ?? h.style ?? null,
+          style: h.style ?? h.category ?? null,
           musical_key: h.musical_key ?? null,
           musical_notation: h.musical_notation ?? null,
           note: null,

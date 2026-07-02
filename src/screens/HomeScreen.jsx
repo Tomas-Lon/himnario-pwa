@@ -46,7 +46,7 @@ function useFullscreen() {
 export default function HomeScreen() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const { isFs, toggle } = useFullscreen()
+  const { isFs, toggle, isInstalledPwa } = useFullscreen()
 
   // Debounce 300 ms
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function HomeScreen() {
         )
       })
       .sortBy('numero')
-  const { isFs, toggle, isInstalledPwa } = useFullscreen()
+  }, [debouncedSearch])
 
   return (
     <div className="h-full flex flex-col bg-white">

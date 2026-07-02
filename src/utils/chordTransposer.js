@@ -46,6 +46,43 @@ const SCALES = {
 // Orden de reemplazo: más largo primero (VII antes que VI antes que V, etc.)
 const SORTED_NUMERALS = Object.keys(ROMAN_INDEX).sort((a, b) => b.length - a.length)
 
+const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+
+const NOTE_INDEX = {
+  C: 0,
+  'C#': 1,
+  Db: 1,
+  D: 2,
+  'D#': 3,
+  Eb: 3,
+  E: 4,
+  F: 5,
+  'F#': 6,
+  Gb: 6,
+  G: 7,
+  'G#': 8,
+  Ab: 8,
+  A: 9,
+  'A#': 10,
+  Bb: 10,
+  B: 11,
+}
+
+function shiftChordRoot(chord, semitones, preferFlats) {
+  const m = String(chord ?? '').match(/^([A-G](?:#|b)?)(.*)$/)
+  if (!m) return chord
+
+  const root = m[1]
+  const suffix = m[2] ?? ''
+  const idx = NOTE_INDEX[root]
+  if (idx == null) return chord
+
+  const shifted = (idx + semitones + 12) % 12
+  const newRoot = (preferFlats ? NOTES_FLAT : NOTES_SHARP)[shifted]
+  return `${newRoot}${suffix}`
+}
+
 /**
  * Transpone la notación de grados romanos a la tonalidad indicada.
  * @param {string|null} notation  Texto con grados romanos ("I    IV    V")
@@ -55,9 +92,26 @@ const SORTED_NUMERALS = Object.keys(ROMAN_INDEX).sort((a, b) => b.length - a.len
 export function transpose(notation, key) {
   if (!notation || !key) return notation ?? ''
   const scale = SCALES[key] ?? SCALES[key.toUpperCase()] ?? SCALES['C']
+  const preferFlats = /b/.test(String(key))
+
+  // Soporta grados con alteraciones y extensiones:
+  // I, iv, I7, VI7, bVII, BVII, #IV, etc.
+  const tokenRegex = /(?<![A-Za-z])([bB#]?)(VII|III|VI|IV|II|I|vii|iii|vi|iv|ii|i|v)(\d*)(?![A-Za-z])/g
+  let result = notation.replace(tokenRegex, (_, accidental, numeral, ext) => {
+    const idx = ROMAN_INDEX[numeral]
+    if (idx == null) return _
+
+    let chord = scale[idx]
+    if (accidental === 'b' || accidental === 'B') {
+      chord = shiftChordRoot(chord, -1, true)
+    } else if (accidental === '#') {
+      chord = shiftChordRoot(chord, 1, preferFlats)
+    }
+
+    return `${chord}${ext ?? ''}`
+  })
 
   // Reemplazamos de mayor a menor longitud usando word-boundary equivalente
-  let result = notation
   for (const numeral of SORTED_NUMERALS) {
     const idx = ROMAN_INDEX[numeral]
     const chord = scale[idx]
