@@ -42,7 +42,9 @@ export async function seedDatabase() {
   const stored = await db.meta.get('dataVersion')
   if (stored?.value === version) return // Ya actualizado
 
-  await db.transaction('rw', db.hymns, async () => {
+  await db.transaction('rw', db.hymns, db.listaHimnos, async () => {
+    const incomingIds = new Set(data.map((h) => h.id))
+
     for (const h of data) {
       const existing = await db.hymns.get(h.id)
       if (existing) {
@@ -66,6 +68,25 @@ export async function seedDatabase() {
           musical_notation: h.musical_notation ?? null,
           note: null,
         })
+      }
+    }
+
+    // Elimina himnos que ya no existen en el nuevo dataset
+    const existingIds = await db.hymns.toCollection().primaryKeys()
+    for (const id of existingIds) {
+      if (!incomingIds.has(id)) {
+        await db.hymns.delete(id)
+      }
+    }
+
+    // Limpia relaciones de listas que apuntan a himnos eliminados
+    const relations = await db.listaHimnos.toArray()
+    for (const rel of relations) {
+      if (!incomingIds.has(rel.hymnId)) {
+        await db.listaHimnos
+          .where('[listaId+hymnId]')
+          .equals([rel.listaId, rel.hymnId])
+          .delete()
       }
     }
   })
