@@ -14,6 +14,13 @@ function normalize(str) {
 
 function useFullscreen() {
   const [isFs, setIsFs] = useState(!!document.fullscreenElement)
+
+  // ¿La app ya está en modo standalone/fullscreen instalada como PWA?
+  const isInstalledPwa =
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+
   useEffect(() => {
     const handler = () => setIsFs(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', handler)
@@ -33,7 +40,7 @@ function useFullscreen() {
       fn?.call(document).catch(() => {})
     }
   }
-  return { isFs, toggle }
+  return { isFs, toggle, isInstalledPwa }
 }
 
 export default function HomeScreen() {
@@ -61,7 +68,7 @@ export default function HomeScreen() {
         )
       })
       .sortBy('numero')
-  }, [debouncedSearch])
+  const { isFs, toggle, isInstalledPwa } = useFullscreen()
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -69,15 +76,17 @@ export default function HomeScreen() {
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl font-bold text-gray-900">Himnario</h1>
-          <button
-            onClick={toggle}
-            className="p-1.5 text-gray-400 active:text-gray-700"
-            title={isFs ? 'Salir de pantalla completa' : 'Pantalla completa'}
-          >
-            {isFs
-              ? <ArrowsPointingInIcon className="w-5 h-5" />
-              : <ArrowsPointingOutIcon className="w-5 h-5" />}
-          </button>
+          {!isInstalledPwa && (
+            <button
+              onClick={toggle}
+              className="p-1.5 text-gray-400 active:text-gray-700"
+              title={isFs ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            >
+              {isFs
+                ? <ArrowsPointingInIcon className="w-5 h-5" />
+                : <ArrowsPointingOutIcon className="w-5 h-5" />}
+            </button>
+          )}
         </div>
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
