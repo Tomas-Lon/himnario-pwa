@@ -30,7 +30,6 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'fullscreen',
         display_override: ['fullscreen', 'standalone'],
-        // display anterior: 'standalone',
         orientation: 'portrait',
         start_url: '/himnario-pwa/',
         scope: '/himnario-pwa/',
