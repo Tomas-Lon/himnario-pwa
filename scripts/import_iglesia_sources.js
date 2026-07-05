@@ -181,8 +181,9 @@ function main() {
     }
   })
 
+  const version = new Date().toISOString().replace(/[-:TZ]/g, '').slice(0, 14)
   const payload = {
-    version: '2026.07.02.1',
+    version,
     data,
   }
 
