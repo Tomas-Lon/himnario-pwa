@@ -12,10 +12,14 @@ import path from 'path'
 import xlsx from 'xlsx'
 
 const ROOT = process.cwd()
-const SRC_JSON = path.join(ROOT, 'DB_Iglesia', 'DB_Iglesia_01-07-26.json')
-const SRC_TXT = path.join(ROOT, 'DB_Iglesia', 'Canciones_acordes.txt')
-const SRC_XLSX_NEW = path.join(ROOT, 'DB_Iglesia', 'RevisionCanciones_01.xlsx')
-const SRC_XLSX_OLD = path.join(ROOT, 'DB_Iglesia', 'RevisionCanciones.xlsx')
+const DB_DIR_NEW = path.join(ROOT, 'DB_PWA_IGLESIA')
+const DB_DIR_OLD = path.join(ROOT, 'DB_Iglesia')
+const SRC_DIR = fs.existsSync(DB_DIR_NEW) ? DB_DIR_NEW : DB_DIR_OLD
+
+const SRC_JSON = path.join(SRC_DIR, 'DB_Iglesia_01-07-26.json')
+const SRC_TXT = path.join(SRC_DIR, 'Canciones_acordes.txt')
+const SRC_XLSX_NEW = path.join(SRC_DIR, 'RevisionCanciones_01.xlsx')
+const SRC_XLSX_OLD = path.join(SRC_DIR, 'RevisionCanciones.xlsx')
 const OUT_JSON = path.join(ROOT, 'public', 'data', 'hymns.json')
 
 const TITLE_ALIASES = {
@@ -149,6 +153,17 @@ function parseXlsx(filePath) {
 
 function main() {
   const srcXlsx = fs.existsSync(SRC_XLSX_NEW) ? SRC_XLSX_NEW : SRC_XLSX_OLD
+
+  if (!fs.existsSync(SRC_JSON)) {
+    throw new Error(`No se encontró la fuente JSON: ${SRC_JSON}`)
+  }
+  if (!fs.existsSync(SRC_TXT)) {
+    throw new Error(`No se encontró la fuente de acordes TXT: ${SRC_TXT}`)
+  }
+  if (!fs.existsSync(srcXlsx)) {
+    throw new Error(`No se encontró la fuente XLSX: ${srcXlsx}`)
+  }
+
   const raw = JSON.parse(fs.readFileSync(SRC_JSON, 'utf8'))
   const chordMap = parseChordTxt(SRC_TXT)
   const { rows: xlsxRows, map: xlsxMap } = parseXlsx(srcXlsx)
@@ -213,6 +228,7 @@ function main() {
   const withChords = data.filter((d) => d.musical_notation).length
 
   console.log(`Base rows: ${data.length}`)
+  console.log(`Source dir: ${path.basename(SRC_DIR)}`)
   console.log(`XLSX source: ${path.basename(srcXlsx)}`)
   console.log(`XLSX rows: ${xlsxRows.length}`)
   console.log(`XLSX match exact: ${xlsxExactMatches}`)
