@@ -226,18 +226,18 @@ export default function App() {
         </div>
       )}
 
-      {/* Pantallas — se mantienen montadas para preservar scroll */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+6rem)]" style={{ touchAction: 'pan-y' }}>
-        <div className={`min-h-full ${activeTab === 'home' ? '' : 'hidden'}`}>
+      {/* Pantallas — se mantienen montadas para preservar estado */}
+      <div className="w-full">
+        <div className={`min-h-[100dvh] ${activeTab === 'home' ? '' : 'hidden'}`}>
           <HomeScreen />
         </div>
-        <div className={`min-h-full ${activeTab === 'filter' ? '' : 'hidden'}`}>
+        <div className={`min-h-[100dvh] ${activeTab === 'filter' ? '' : 'hidden'}`}>
           <FilterScreen />
         </div>
-        <div className={`min-h-full ${activeTab === 'musicians' ? '' : 'hidden'}`}>
+        <div className={`min-h-[100dvh] ${activeTab === 'musicians' ? '' : 'hidden'}`}>
           <MusicianScreen />
         </div>
-        <div className={`min-h-full ${activeTab === 'lists' ? '' : 'hidden'}`}>
+        <div className={`min-h-[100dvh] ${activeTab === 'lists' ? '' : 'hidden'}`}>
           {selectedListId != null ? (
             <ListDetailScreen
               listId={selectedListId}
