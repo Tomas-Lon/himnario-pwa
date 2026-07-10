@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { db } from './db/database'
 import { seedDatabase } from './db/database'
 import HomeScreen from './screens/HomeScreen'
 import FilterScreen from './screens/FilterScreen'
@@ -14,6 +15,7 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(null)
   const [updateCheckMsg, setUpdateCheckMsg] = useState('')
+  const [dataUpdateAvailable, setDataUpdateAvailable] = useState(false)
   const swRegistrationRef = useRef(null)
 
   const {
@@ -33,17 +35,55 @@ export default function App() {
 
   const handleCheckUpdate = async () => {
     try {
-      if (!swRegistrationRef.current) {
-        setUpdateCheckMsg('Verificador no disponible aún')
-        setTimeout(() => setUpdateCheckMsg(''), 2000)
+      // 1) Verifica actualización del Service Worker (app shell)
+      if (!swRegistrationRef.current && 'serviceWorker' in navigator) {
+        swRegistrationRef.current = await navigator.serviceWorker.getRegistration()
+      }
+
+      await swRegistrationRef.current?.update()
+
+      // 2) Verifica actualización de datos (hymns.json)
+      const [localMeta, remoteRes] = await Promise.all([
+        db.meta.get('dataVersion'),
+        fetch(`${import.meta.env.BASE_URL}data/hymns.json?t=${Date.now()}`, {
+          cache: 'no-store',
+        }),
+      ])
+
+      if (!remoteRes.ok) {
+        setUpdateCheckMsg('No se pudo verificar')
+        setTimeout(() => setUpdateCheckMsg(''), 2200)
         return
       }
-      await swRegistrationRef.current.update()
-      setUpdateCheckMsg('Buscando actualización...')
-      setTimeout(() => setUpdateCheckMsg(''), 2000)
+
+      const remoteJson = await remoteRes.json()
+      const remoteVersion = String(remoteJson?.version ?? '1.0')
+      const localVersion = String(localMeta?.value ?? '1.0')
+
+      if (remoteVersion !== localVersion) {
+        setDataUpdateAvailable(true)
+        setUpdateCheckMsg('Hay datos nuevos disponibles')
+      } else {
+        setDataUpdateAvailable(false)
+        setUpdateCheckMsg('Ya tienes la ultima version')
+      }
+      setTimeout(() => setUpdateCheckMsg(''), 2500)
     } catch {
       setUpdateCheckMsg('No se pudo verificar')
       setTimeout(() => setUpdateCheckMsg(''), 2000)
+    }
+  }
+
+  const handleApplyDataUpdate = async () => {
+    try {
+      setUpdateCheckMsg('Actualizando datos...')
+      await seedDatabase()
+      setDataUpdateAvailable(false)
+      setUpdateCheckMsg('Datos actualizados')
+      setTimeout(() => setUpdateCheckMsg(''), 2500)
+    } catch {
+      setUpdateCheckMsg('Error al actualizar datos')
+      setTimeout(() => setUpdateCheckMsg(''), 2500)
     }
   }
 
@@ -102,6 +142,14 @@ export default function App() {
         <div className="px-3 pt-2">
           <div className="flex items-center justify-end gap-2">
             {updateCheckMsg && <span className="text-[11px] text-gray-500">{updateCheckMsg}</span>}
+            {dataUpdateAvailable && (
+              <button
+                onClick={handleApplyDataUpdate}
+                className="text-[11px] text-white bg-ios-blue px-2 py-1 rounded-lg active:opacity-80"
+              >
+                Actualizar datos
+              </button>
+            )}
             <button
               onClick={handleCheckUpdate}
               className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-lg active:opacity-80"
