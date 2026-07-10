@@ -14,8 +14,17 @@ import xlsx from 'xlsx'
 const ROOT = process.cwd()
 const SRC_JSON = path.join(ROOT, 'DB_Iglesia', 'DB_Iglesia_01-07-26.json')
 const SRC_TXT = path.join(ROOT, 'DB_Iglesia', 'Canciones_acordes.txt')
-const SRC_XLSX = path.join(ROOT, 'DB_Iglesia', 'RevisionCanciones.xlsx')
+const SRC_XLSX_NEW = path.join(ROOT, 'DB_Iglesia', 'RevisionCanciones_01.xlsx')
+const SRC_XLSX_OLD = path.join(ROOT, 'DB_Iglesia', 'RevisionCanciones.xlsx')
 const OUT_JSON = path.join(ROOT, 'public', 'data', 'hymns.json')
+
+const TITLE_ALIASES = {
+  [normalizeTitle('Santo, Santo, Santo; Dicen Los Querubines')]: normalizeTitle('Santo, Santo dicen los querubines'),
+  [normalizeTitle('A precio De Sangre')]: normalizeTitle('Aprecio de sangre'),
+  [normalizeTitle('Santo, Santo, Santo, eres tu')]: normalizeTitle('Santo, Santo, Santo'),
+  [normalizeTitle('Señor Tú Eres, la persona')]: normalizeTitle('Señor Tú eres Precioso para mí'),
+  [normalizeTitle('Aleluya Al Señor')]: normalizeTitle('Canta Aleluya'),
+}
 
 function normalizeTitle(s) {
   return String(s ?? '')
@@ -114,13 +123,22 @@ function parseXlsx(filePath) {
   const ws = wb.Sheets[wb.SheetNames[0]]
   const rows = xlsx.utils.sheet_to_json(ws, { defval: '' })
 
+  const cleanPrefixedTitle = (s) => String(s ?? '')
+    .replace(/^\s*\d+\s*[\.)-]\s*/, '')
+    .trim()
+
   const map = new Map()
   for (const row of rows) {
-    const title = row.HIMNOS || row.TITULO || row.TITULO || row.Title || ''
+    const title = cleanPrefixedTitle(
+      row.HIMNOS || row.TITULO || row.Titulo || row.Title || row.Column1 || '',
+    )
     if (!String(title).trim()) continue
-    const key = String(row.NOTA ?? '').trim()
-    const style = String(row.ESTILO ?? '').trim()
-    map.set(normalizeTitle(title), {
+    const key = String(row.NOTA ?? row.Column2 ?? '').trim()
+    const style = String(row.ESTILO ?? row.Column3 ?? '').trim()
+    const normalized = normalizeTitle(title)
+    const canonical = TITLE_ALIASES[normalized] ?? normalized
+
+    map.set(canonical, {
       key: key || null,
       style: style || null,
     })
@@ -130,9 +148,10 @@ function parseXlsx(filePath) {
 }
 
 function main() {
+  const srcXlsx = fs.existsSync(SRC_XLSX_NEW) ? SRC_XLSX_NEW : SRC_XLSX_OLD
   const raw = JSON.parse(fs.readFileSync(SRC_JSON, 'utf8'))
   const chordMap = parseChordTxt(SRC_TXT)
-  const { rows: xlsxRows, map: xlsxMap } = parseXlsx(SRC_XLSX)
+  const { rows: xlsxRows, map: xlsxMap } = parseXlsx(srcXlsx)
 
   const baseRows = raw.filter((x) => x && (x.title || x?.lyrics?.full_text))
 
@@ -194,6 +213,7 @@ function main() {
   const withChords = data.filter((d) => d.musical_notation).length
 
   console.log(`Base rows: ${data.length}`)
+  console.log(`XLSX source: ${path.basename(srcXlsx)}`)
   console.log(`XLSX rows: ${xlsxRows.length}`)
   console.log(`XLSX match exact: ${xlsxExactMatches}`)
   console.log(`XLSX match fuzzy: ${xlsxFuzzyMatches}`)
