@@ -41,7 +41,7 @@ export default function MusicianScreen() {
   return (
     <div className="flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
+      <div className="sticky top-0 z-30 bg-white px-4 pt-4 pb-3 border-b border-ios-separator shadow-[0_1px_0_rgba(0,0,0,0.02)]">
         <h1 className="text-2xl font-bold text-gray-900">Músicos</h1>
         <p className="text-xs text-gray-400 mt-0.5 mb-3">
           Selecciona una tonalidad para transponer acordes automáticamente
