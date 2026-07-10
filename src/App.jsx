@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
 import { seedDatabase } from './db/database'
 import HomeScreen from './screens/HomeScreen'
 import FilterScreen from './screens/FilterScreen'
@@ -12,6 +13,11 @@ export default function App() {
   const [selectedListId, setSelectedListId] = useState(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(null)
+
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW()
 
   // Solicitar pantalla completa en el primer toque (oculta barra de Chrome en Android)
   useEffect(() => {
@@ -64,6 +70,28 @@ export default function App() {
 
   return (
     <div className="h-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {needRefresh && (
+        <div className="px-3 pt-2">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 flex items-center gap-2">
+            <p className="text-xs text-blue-800 flex-1">
+              Hay una nueva versión disponible.
+            </p>
+            <button
+              onClick={() => updateServiceWorker(true)}
+              className="text-xs font-semibold text-white bg-ios-blue px-3 py-1.5 rounded-lg active:opacity-80"
+            >
+              Actualizar
+            </button>
+            <button
+              onClick={() => setNeedRefresh(false)}
+              className="text-xs font-medium text-blue-700 px-2 py-1"
+            >
+              Luego
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Pantallas — se mantienen montadas para preservar scroll */}
       <div className="flex-1 overflow-hidden">
         <div className={`h-full ${activeTab === 'home' ? '' : 'hidden'}`}>
