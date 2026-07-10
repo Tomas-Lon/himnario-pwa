@@ -75,7 +75,7 @@ export default function ListDetailScreen({ listId, onBack }) {
   const displayed = localOrder ?? hymnsInList ?? []
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white">
+    <div className="min-h-full flex flex-col bg-white">
       {/* Header */}
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
         <div className="flex items-center gap-3">
@@ -103,7 +103,7 @@ export default function ListDetailScreen({ listId, onBack }) {
       </div>
 
       {/* Lista de himnos */}
-      <div className="flex-1 min-h-0 scroll-view">
+      <div className="flex-1 pb-4">
         {hymnsInList === undefined ? (
           <Spinner />
         ) : hymnsInList.length === 0 ? (
@@ -389,7 +389,7 @@ function AddHymnModal({ listId, existingIds, onClose }) {
       </div>
 
       {/* Resultados */}
-      <div className="flex-1 min-h-0 scroll-view">
+      <div className="flex-1 pb-4">
         {(hymns ?? []).map((h) => {
           const alreadyAdded = existingIds.includes(h.id)
           return (

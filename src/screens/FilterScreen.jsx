@@ -40,7 +40,7 @@ export default function FilterScreen() {
   const hasFilter = selectedCategory || selectedKey
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white">
+    <div className="min-h-full flex flex-col bg-white">
       {/* Header */}
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
         <div className="flex items-center justify-between mb-3">
@@ -138,7 +138,7 @@ export default function FilterScreen() {
       </div>
 
       {/* Lista */}
-      <div className="flex-1 min-h-0 scroll-view" onClick={() => { setShowCatMenu(false); setShowKeyMenu(false) }}>
+      <div className="flex-1 pb-4" onClick={() => { setShowCatMenu(false); setShowKeyMenu(false) }}>
         {hymns === undefined ? (
           <Spinner />
         ) : hymns.length === 0 ? (

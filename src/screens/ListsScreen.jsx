@@ -62,7 +62,7 @@ export default function ListsScreen({ onSelectList }) {
   const noFolderLists = (listas ?? []).filter((l) => l.folderId == null)
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-ios-lightgray">
+    <div className="min-h-full flex flex-col bg-ios-lightgray">
       {/* Header */}
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
         <div className="flex items-center justify-between">
@@ -135,7 +135,7 @@ export default function ListsScreen({ onSelectList }) {
       </div>
 
       {/* Contenido */}
-      <div className="flex-1 min-h-0 scroll-view px-4 py-3 space-y-3">
+      <div className="flex-1 px-4 py-3 space-y-3 pb-24">
         {/* Carpetas */}
         {(folders ?? []).map((folder) => {
           const listsInFolder = (listas ?? []).filter((l) => l.folderId === folder.id)

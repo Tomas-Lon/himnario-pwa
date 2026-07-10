@@ -39,7 +39,7 @@ export default function MusicianScreen() {
   }, [debouncedSearch])
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white">
+    <div className="min-h-full flex flex-col bg-white">
       {/* Header */}
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
         <h1 className="text-2xl font-bold text-gray-900">Músicos</h1>
@@ -91,7 +91,7 @@ export default function MusicianScreen() {
       </div>
 
       {/* Lista */}
-      <div className="flex-1 min-h-0 scroll-view">
+      <div className="flex-1 pb-4">
         {hymns === undefined ? (
           <Spinner />
         ) : hymns.length === 0 ? (
