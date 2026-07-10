@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import { db } from './db/database'
-import { seedDatabase } from './db/database'
+import { db, seedDatabase } from './db/database'
 import HomeScreen from './screens/HomeScreen'
 import FilterScreen from './screens/FilterScreen'
 import MusicianScreen from './screens/MusicianScreen'
@@ -14,9 +13,12 @@ export default function App() {
   const [selectedListId, setSelectedListId] = useState(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [updateCheckMsg, setUpdateCheckMsg] = useState('')
   const [dataUpdateAvailable, setDataUpdateAvailable] = useState(false)
+  const [appUpdateAvailable, setAppUpdateAvailable] = useState(false)
   const swRegistrationRef = useRef(null)
+  const autoCheckTimerRef = useRef(null)
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -25,22 +27,20 @@ export default function App() {
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return
       swRegistrationRef.current = registration
-
-      // Revisa actualizaciones periódicamente mientras la app está abierta.
-      setInterval(() => {
-        registration.update().catch(() => {})
-      }, 60 * 1000)
     },
   })
 
-  const handleCheckUpdate = async () => {
+  const checkForUpdates = async ({ silent = false } = {}) => {
     try {
+      if (!silent) setUpdateCheckMsg('Buscando actualizaciones...')
+
       // 1) Verifica actualización del Service Worker (app shell)
       if (!swRegistrationRef.current && 'serviceWorker' in navigator) {
         swRegistrationRef.current = await navigator.serviceWorker.getRegistration()
       }
 
       await swRegistrationRef.current?.update()
+      setAppUpdateAvailable(!!needRefresh)
 
       // 2) Verifica actualización de datos (hymns.json)
       const [localMeta, remoteRes] = await Promise.all([
@@ -51,8 +51,10 @@ export default function App() {
       ])
 
       if (!remoteRes.ok) {
-        setUpdateCheckMsg('No se pudo verificar')
-        setTimeout(() => setUpdateCheckMsg(''), 2200)
+        if (!silent) {
+          setUpdateCheckMsg('No se pudo verificar')
+          setTimeout(() => setUpdateCheckMsg(''), 2200)
+        }
         return
       }
 
@@ -62,22 +64,24 @@ export default function App() {
 
       if (remoteVersion !== localVersion) {
         setDataUpdateAvailable(true)
-        setUpdateCheckMsg('Hay datos nuevos disponibles')
+        if (!silent) setUpdateCheckMsg('Hay datos nuevos disponibles')
       } else {
         setDataUpdateAvailable(false)
-        setUpdateCheckMsg('Ya tienes la ultima version')
+        if (!silent) setUpdateCheckMsg('Ya tienes la ultima version')
       }
-      setTimeout(() => setUpdateCheckMsg(''), 2500)
+      if (!silent) setTimeout(() => setUpdateCheckMsg(''), 2500)
     } catch {
-      setUpdateCheckMsg('No se pudo verificar')
-      setTimeout(() => setUpdateCheckMsg(''), 2000)
+      if (!silent) {
+        setUpdateCheckMsg('No se pudo verificar')
+        setTimeout(() => setUpdateCheckMsg(''), 2000)
+      }
     }
   }
 
-  const handleApplyDataUpdate = async () => {
+  const handleForceDataUpdate = async () => {
     try {
-      setUpdateCheckMsg('Actualizando datos...')
-      await seedDatabase()
+      setUpdateCheckMsg('Forzando actualización...')
+      await seedDatabase(true)
       setDataUpdateAvailable(false)
       setUpdateCheckMsg('Datos actualizados')
       setTimeout(() => setUpdateCheckMsg(''), 2500)
@@ -86,6 +90,22 @@ export default function App() {
       setTimeout(() => setUpdateCheckMsg(''), 2500)
     }
   }
+
+  const handleApplyAppUpdate = () => {
+    setMenuOpen(false)
+    updateServiceWorker(true)
+  }
+
+  useEffect(() => {
+    const run = () => checkForUpdates({ silent: true })
+    run()
+    autoCheckTimerRef.current = setInterval(run, 60 * 1000)
+
+    return () => {
+      if (autoCheckTimerRef.current) clearInterval(autoCheckTimerRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needRefresh])
 
   // Solicitar pantalla completa en el primer toque (oculta barra de Chrome en Android)
   useEffect(() => {
@@ -138,27 +158,54 @@ export default function App() {
 
   return (
     <div className="h-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      {!needRefresh && (
-        <div className="px-3 pt-2">
-          <div className="flex items-center justify-end gap-2">
-            {updateCheckMsg && <span className="text-[11px] text-gray-500">{updateCheckMsg}</span>}
-            {dataUpdateAvailable && (
-              <button
-                onClick={handleApplyDataUpdate}
-                className="text-[11px] text-white bg-ios-blue px-2 py-1 rounded-lg active:opacity-80"
-              >
-                Actualizar datos
-              </button>
-            )}
-            <button
-              onClick={handleCheckUpdate}
-              className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-lg active:opacity-80"
-            >
-              Buscar actualización
-            </button>
-          </div>
+      <div className="px-3 pt-2 relative">
+        <div className="flex items-center justify-end gap-2">
+          {updateCheckMsg && <span className="text-[11px] text-gray-500">{updateCheckMsg}</span>}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="text-[11px] text-gray-600 bg-gray-100 px-2 py-1 rounded-lg active:opacity-80"
+          >
+            Opciones
+          </button>
         </div>
-      )}
+
+        {menuOpen && (
+          <div className="absolute right-3 top-10 z-20 w-64 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-900">Actualizaciones</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                Auto-chequeo cada 60s
+              </p>
+            </div>
+
+            <button
+              onClick={() => { setMenuOpen(false); checkForUpdates({ silent: false }) }}
+              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
+            >
+              Buscar ahora
+            </button>
+
+            <button
+              onClick={handleForceDataUpdate}
+              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
+            >
+              Forzar sincronización de datos
+            </button>
+
+            <button
+              onClick={handleApplyAppUpdate}
+              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
+            >
+              Aplicar actualización de la app
+            </button>
+
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-[11px] text-gray-500 space-y-1">
+              <p>App: {appUpdateAvailable || needRefresh ? 'hay actualización' : 'actualizada'}</p>
+              <p>Datos: {dataUpdateAvailable ? 'hay cambios' : 'al día'}</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {needRefresh && (
         <div className="px-3 pt-2">
@@ -167,7 +214,7 @@ export default function App() {
               Hay una nueva versión disponible.
             </p>
             <button
-              onClick={() => updateServiceWorker(true)}
+              onClick={handleApplyAppUpdate}
               className="text-xs font-semibold text-white bg-ios-blue px-3 py-1.5 rounded-lg active:opacity-80"
             >
               Actualizar

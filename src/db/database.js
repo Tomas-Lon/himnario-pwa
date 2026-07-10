@@ -32,7 +32,7 @@ db.version(2).stores({
  * - Si hay una versión nueva: actualiza título/letra/acordes pero PRESERVA las notas del usuario.
  * - Si un himno es nuevo: lo agrega con nota vacía.
  */
-export async function seedDatabase() {
+export async function seedDatabase(forceRefresh = false) {
   let data, version
 
   try {
@@ -50,7 +50,7 @@ export async function seedDatabase() {
   }
 
   const stored = await db.meta.get('dataVersion')
-  if (stored?.value === version) return // Ya actualizado
+  if (!forceRefresh && stored?.value === version) return // Ya actualizado
 
   await db.transaction('rw', db.hymns, db.listaHimnos, async () => {
     const incomingIds = new Set(data.map((h) => h.id))
