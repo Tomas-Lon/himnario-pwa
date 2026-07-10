@@ -5,9 +5,14 @@
 html,
 body,
 #root {
+  min-height: 100dvh;
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+body {
+  background: #f8f8f8;
 }
 
 * {

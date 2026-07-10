@@ -115,7 +115,7 @@ export default function HymnItem({ hymn, showChords = false, transposeKey = null
           <div className="mt-4">
             <p className="text-xs text-gray-400 font-medium mb-1">Nota personal</p>
             <textarea
-              className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 resize-none focus:outline-none focus:ring-2 focus:ring-ios-blue"
+              className="w-full text-base border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 resize-none focus:outline-none focus:ring-2 focus:ring-ios-blue"
               rows={2}
               placeholder="Escribe una nota..."
               value={note}

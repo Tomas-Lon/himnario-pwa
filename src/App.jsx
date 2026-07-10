@@ -157,7 +157,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-[100dvh] w-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="px-3 pt-2 relative">
         <div className="flex items-center justify-end gap-2">
           {updateCheckMsg && <span className="text-[11px] text-gray-500">{updateCheckMsg}</span>}
@@ -230,7 +230,7 @@ export default function App() {
       )}
 
       {/* Pantallas — se mantienen montadas para preservar scroll */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <div className={`h-full ${activeTab === 'home' ? '' : 'hidden'}`}>
           <HomeScreen />
         </div>

@@ -102,7 +102,7 @@ export default function ListsScreen({ onSelectList }) {
             <input
               autoFocus
               type="text"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-ios-blue"
               placeholder="Nombre de lista..."
               value={newListName}
               onChange={(e) => setNewListName(e.target.value)}
@@ -235,7 +235,7 @@ function InlineForm({ placeholder, value, onChange, onConfirm, onCancel }) {
       <input
         autoFocus
         type="text"
-        className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue"
+        className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-ios-blue"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}

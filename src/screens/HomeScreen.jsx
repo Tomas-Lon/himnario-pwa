@@ -94,7 +94,7 @@ export default function HomeScreen() {
             type="search"
             inputMode="search"
             placeholder="Título, letra o número..."
-            className="w-full pl-9 pr-9 py-2.5 bg-ios-lightgray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue"
+            className="w-full pl-9 pr-9 py-2.5 bg-ios-lightgray rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-ios-blue"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
