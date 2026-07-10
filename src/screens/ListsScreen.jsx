@@ -64,7 +64,7 @@ export default function ListsScreen({ onSelectList }) {
   return (
     <div className="flex flex-col bg-ios-lightgray">
       {/* Header */}
-      <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
+      <div className="sticky top-0 z-30 bg-white px-4 pt-4 pb-3 border-b border-ios-separator shadow-[0_1px_0_rgba(0,0,0,0.02)]">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Listas</h1>
           <div className="flex gap-2">

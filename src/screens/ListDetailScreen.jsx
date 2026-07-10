@@ -77,7 +77,7 @@ export default function ListDetailScreen({ listId, onBack }) {
   return (
     <div className="flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
+      <div className="sticky top-0 z-30 bg-white px-4 pt-4 pb-3 border-b border-ios-separator shadow-[0_1px_0_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-ios-blue p-1 -ml-1">
             <ChevronLeftIcon className="w-5 h-5" />
