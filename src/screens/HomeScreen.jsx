@@ -71,7 +71,7 @@ export default function HomeScreen() {
   }, [debouncedSearch])
 
   return (
-    <div className="min-h-full flex flex-col bg-white">
+    <div className="flex flex-col bg-white">
       {/* Header */}
       <div className="bg-white px-4 pt-4 pb-3 border-b border-ios-separator">
         <div className="flex items-center justify-between mb-3">
@@ -110,7 +110,7 @@ export default function HomeScreen() {
       </div>
 
       {/* Lista */}
-      <div className="flex-1 pb-4">
+      <div className="pb-2">
         {hymns === undefined ? (
           <Spinner />
         ) : hymns.length === 0 ? (
@@ -123,7 +123,7 @@ export default function HomeScreen() {
             {hymns.map((h) => (
               <HymnItem key={h.id} hymn={h} />
             ))}
-            <div className="h-6" />
+            <div className="h-2" />
           </>
         )}
       </div>

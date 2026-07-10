@@ -228,16 +228,16 @@ export default function App() {
 
       {/* Pantallas — se mantienen montadas para preservar estado */}
       <div className="w-full">
-        <div className={`min-h-[100dvh] ${activeTab === 'home' ? '' : 'hidden'}`}>
+        <div className={`${activeTab === 'home' ? '' : 'hidden'}`}>
           <HomeScreen />
         </div>
-        <div className={`min-h-[100dvh] ${activeTab === 'filter' ? '' : 'hidden'}`}>
+        <div className={`${activeTab === 'filter' ? '' : 'hidden'}`}>
           <FilterScreen />
         </div>
-        <div className={`min-h-[100dvh] ${activeTab === 'musicians' ? '' : 'hidden'}`}>
+        <div className={`${activeTab === 'musicians' ? '' : 'hidden'}`}>
           <MusicianScreen />
         </div>
-        <div className={`min-h-[100dvh] ${activeTab === 'lists' ? '' : 'hidden'}`}>
+        <div className={`${activeTab === 'lists' ? '' : 'hidden'}`}>
           {selectedListId != null ? (
             <ListDetailScreen
               listId={selectedListId}
