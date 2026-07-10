@@ -158,7 +158,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col bg-ios-lightgray pb-[calc(env(safe-area-inset-bottom)+5.25rem)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-[100dvh] w-full flex flex-col bg-ios-lightgray pb-[calc(env(safe-area-inset-bottom)+5.75rem)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="fixed right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex items-center gap-2">
         {updateCheckMsg && <span className="text-[11px] text-gray-500 bg-white/80 backdrop-blur px-2 py-1 rounded-full shadow-sm">{updateCheckMsg}</span>}
         <button
@@ -227,7 +227,7 @@ export default function App() {
       )}
 
       {/* Pantallas — se mantienen montadas para preservar scroll */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden" style={{ touchAction: 'pan-y' }}>
         <div className={`h-full ${activeTab === 'home' ? '' : 'hidden'}`}>
           <HomeScreen />
         </div>
