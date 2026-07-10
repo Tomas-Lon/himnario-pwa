@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { seedDatabase } from './db/database'
 import HomeScreen from './screens/HomeScreen'
@@ -13,11 +13,39 @@ export default function App() {
   const [selectedListId, setSelectedListId] = useState(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(null)
+  const [updateCheckMsg, setUpdateCheckMsg] = useState('')
+  const swRegistrationRef = useRef(null)
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW()
+  } = useRegisterSW({
+    onRegisteredSW(_swUrl, registration) {
+      if (!registration) return
+      swRegistrationRef.current = registration
+
+      // Revisa actualizaciones periódicamente mientras la app está abierta.
+      setInterval(() => {
+        registration.update().catch(() => {})
+      }, 60 * 1000)
+    },
+  })
+
+  const handleCheckUpdate = async () => {
+    try {
+      if (!swRegistrationRef.current) {
+        setUpdateCheckMsg('Verificador no disponible aún')
+        setTimeout(() => setUpdateCheckMsg(''), 2000)
+        return
+      }
+      await swRegistrationRef.current.update()
+      setUpdateCheckMsg('Buscando actualización...')
+      setTimeout(() => setUpdateCheckMsg(''), 2000)
+    } catch {
+      setUpdateCheckMsg('No se pudo verificar')
+      setTimeout(() => setUpdateCheckMsg(''), 2000)
+    }
+  }
 
   // Solicitar pantalla completa en el primer toque (oculta barra de Chrome en Android)
   useEffect(() => {
@@ -70,6 +98,20 @@ export default function App() {
 
   return (
     <div className="h-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {!needRefresh && (
+        <div className="px-3 pt-2">
+          <div className="flex items-center justify-end gap-2">
+            {updateCheckMsg && <span className="text-[11px] text-gray-500">{updateCheckMsg}</span>}
+            <button
+              onClick={handleCheckUpdate}
+              className="text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded-lg active:opacity-80"
+            >
+              Buscar actualización
+            </button>
+          </div>
+        </div>
+      )}
+
       {needRefresh && (
         <div className="px-3 pt-2">
           <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 flex items-center gap-2">
