@@ -36,7 +36,9 @@ export async function seedDatabase() {
   let data, version
 
   try {
-    const res = await fetch(`${import.meta.env.BASE_URL}data/hymns.json`)
+    // Agrega cache-buster para evitar JSON viejo servido por SW/browser cache.
+    const freshUrl = `${import.meta.env.BASE_URL}data/hymns.json?t=${Date.now()}`
+    const res = await fetch(freshUrl, { cache: 'no-store' })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const json = await res.json()
     // Acepta {version, data:[...]} o directamente [...]
