@@ -112,7 +112,7 @@ export default function MusicianScreen() {
                 transposeKey={selectedKey}
               />
             ))}
-            <div className="h-2" />
+            <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
           </>
         )}
       </div>

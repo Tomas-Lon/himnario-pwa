@@ -16,6 +16,7 @@ import {
   exportListWithLyricsPdf,
   exportListWithChordsPdf,
 } from '../utils/exportUtils'
+import { STANDARD_KEYS } from '../utils/chordTransposer'
 
 /** Persiste el nuevo orden en Dexie asignando posicion = índice */
 async function saveOrder(listId, orderedHymns) {
@@ -127,7 +128,7 @@ export default function ListDetailScreen({ listId, onBack }) {
               onOrderSave={(newOrder) => saveOrder(listId, newOrder)}
               onRemove={removeHymn}
             />
-            <div className="h-2" />
+            <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
           </>
         )}
       </div>
@@ -268,6 +269,13 @@ function DraggableList({ items, listId, draggingRef, onOrderChange, onOrderSave,
 function ExportMenu({ lista, hymns, onClose }) {
   if (!lista) return null
 
+  const [showChordOptions, setShowChordOptions] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState({})
+
+  const setKeyForHymn = (hymnId, key) => {
+    setSelectedKeys((prev) => ({ ...prev, [hymnId]: key }))
+  }
+
   const options = [
     {
       label: 'Sin letra',
@@ -282,9 +290,14 @@ function ExportMenu({ lista, hymns, onClose }) {
     {
       label: 'Con letra y notas',
       description: 'Acordes/notas + letra',
-      action: () => { exportListWithChordsPdf(lista, hymns); onClose() },
+      action: () => { setShowChordOptions(true) },
     },
   ]
+
+  const handleConfirmChordsExport = () => {
+    exportListWithChordsPdf(lista, hymns, selectedKeys)
+    onClose()
+  }
 
   return (
     <div
@@ -303,25 +316,69 @@ function ExportMenu({ lista, hymns, onClose }) {
             {hymns.length} himno{hymns.length !== 1 ? 's' : ''} · {lista.nombre}
           </p>
         </div>
-        <div className="px-4 py-2">
-          {options.map((opt) => (
-            <button
-              key={opt.label}
-              onClick={opt.action}
-              className="w-full flex flex-col items-start px-3 py-3.5 rounded-xl active:bg-gray-100 text-left"
-            >
-              <span className="text-sm font-medium text-gray-900">{opt.label}</span>
-              <span className="text-xs text-gray-400">{opt.description}</span>
-            </button>
-          ))}
-        </div>
+        {!showChordOptions ? (
+          <div className="px-4 py-2">
+            {options.map((opt) => (
+              <button
+                key={opt.label}
+                onClick={opt.action}
+                className="w-full flex flex-col items-start px-3 py-3.5 rounded-xl active:bg-gray-100 text-left"
+              >
+                <span className="text-sm font-medium text-gray-900">{opt.label}</span>
+                <span className="text-xs text-gray-400">{opt.description}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="px-4 py-2 max-h-[55vh] overflow-y-auto space-y-2">
+            <p className="text-xs text-gray-500 px-1">
+              Selecciona tonalidad por canción. Si no eliges, se usa la tonalidad por defecto del himno.
+            </p>
+            {hymns.map((h) => {
+              const currentKey = selectedKeys[h.id] ?? h.musical_key ?? ''
+              return (
+                <div key={h.id} className="rounded-xl border border-gray-100 p-3 bg-white">
+                  <p className="text-xs text-gray-400 mb-0.5">Nº {h.numero ?? h.id}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate mb-2">{h.title}</p>
+                  <select
+                    className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-sm bg-white focus:outline-none"
+                    value={currentKey}
+                    onChange={(e) => setKeyForHymn(h.id, e.target.value)}
+                  >
+                    <option value="">{h.musical_key ? `Por defecto (${h.musical_key})` : 'Sin tonalidad por defecto'}</option>
+                    {STANDARD_KEYS.map((k) => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                </div>
+              )
+            })}
+          </div>
+        )}
         <div className="px-4 pb-4">
-          <button
-            onClick={onClose}
-            className="w-full py-3 rounded-xl bg-ios-lightgray text-sm font-medium text-gray-700 active:opacity-70"
-          >
-            Cancelar
-          </button>
+          {!showChordOptions ? (
+            <button
+              onClick={onClose}
+              className="w-full py-3 rounded-xl bg-ios-lightgray text-sm font-medium text-gray-700 active:opacity-70"
+            >
+              Cancelar
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowChordOptions(false)}
+                className="flex-1 py-3 rounded-xl bg-ios-lightgray text-sm font-medium text-gray-700 active:opacity-70"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleConfirmChordsExport}
+                className="flex-1 py-3 rounded-xl bg-ios-blue text-sm font-medium text-white active:opacity-80"
+              >
+                Exportar
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -417,7 +474,7 @@ function AddHymnModal({ listId, existingIds, onClose }) {
             Mostrando primeros 40 — escribe para buscar más
           </p>
         )}
-        <div className="h-6" />
+        <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
       </div>
     </div>
   )

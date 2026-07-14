@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import { transpose } from './chordTransposer'
 
 /**
  * Comparte un himno usando Web Share API (nativo en iOS Safari).
@@ -241,7 +242,7 @@ export function exportListWithLyricsPdf(lista, hymns) {
 }
 
 /** Lista: títulos + notas/acordes + letra */
-export function exportListWithChordsPdf(lista, hymns) {
+export function exportListWithChordsPdf(lista, hymns, selectedKeys = {}) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 40
@@ -258,11 +259,13 @@ export function exportListWithChordsPdf(lista, hymns) {
     doc.text(titleLines, margin, y)
     y += titleLines.length * 18 + 2
 
-    if (h.musical_key) {
+    const exportKey = selectedKeys[h.id] ?? h.musical_key ?? null
+
+    if (exportKey) {
       doc.setFontSize(10)
       doc.setFont('helvetica', 'italic')
       doc.setTextColor(80)
-      doc.text(`Tonalidad: ${h.musical_key}`, margin, y)
+      doc.text(`Tonalidad: ${exportKey}`, margin, y)
       y += 14
       doc.setTextColor(0)
     }
@@ -271,11 +274,15 @@ export function exportListWithChordsPdf(lista, hymns) {
     doc.line(margin, y, pageW - margin, y)
     y += 12
 
-    if (h.musical_notation) {
+    const notatedChords = h.musical_notation
+      ? transpose(h.musical_notation, exportKey ?? h.musical_key)
+      : ''
+
+    if (notatedChords) {
       doc.setFont('courier', 'normal')
       doc.setFontSize(9)
       doc.setTextColor(30, 70, 160)
-      for (const line of h.musical_notation.split('\n')) {
+      for (const line of notatedChords.split('\n')) {
         if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 60 }
         doc.text(line, margin, y)
         y += 13

@@ -4,20 +4,34 @@ import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { db } from '../db/database'
 import HymnItem from '../components/HymnItem'
 
-// Tonalidades disponibles en el filtro (mismo orden que Android)
-const KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B',
-               'DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI']
+const KEY_ORDER = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B', 'DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI']
+
+function sortKeys(keys) {
+  return [...keys].sort((a, b) => {
+    const ai = KEY_ORDER.indexOf(String(a).toUpperCase())
+    const bi = KEY_ORDER.indexOf(String(b).toUpperCase())
+    if (ai === -1 && bi === -1) return String(a).localeCompare(String(b))
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+}
 
 export default function FilterScreen() {
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [selectedKey, setSelectedKey] = useState(null)
   const [showCatMenu, setShowCatMenu] = useState(false)
-  const [showKeyMenu, setShowKeyMenu] = useState(false)
 
   // Categorías únicas del DB
   const categories = useLiveQuery(async () => {
     const all = await db.hymns.orderBy('category').uniqueKeys()
     return all.filter(Boolean)
+  })
+
+  // Tonalidades existentes en el DB
+  const musicalKeys = useLiveQuery(async () => {
+    const all = await db.hymns.orderBy('musical_key').uniqueKeys()
+    return sortKeys(all.filter(Boolean))
   })
 
   // Himnos filtrados
@@ -60,7 +74,7 @@ export default function FilterScreen() {
           {/* Categoría */}
           <div className="relative flex-1">
             <button
-              onClick={() => { setShowCatMenu((v) => !v); setShowKeyMenu(false) }}
+              onClick={() => { setShowCatMenu((v) => !v) }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm border
                 ${selectedCategory ? 'border-ios-blue bg-blue-50 text-ios-blue' : 'border-gray-200 bg-ios-lightgray text-gray-600'}`}
             >
@@ -89,39 +103,25 @@ export default function FilterScreen() {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Tonalidad */}
-          <div className="relative flex-1">
+        {/* Tonalidad (chips, solo valores existentes) */}
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+          <button
+            onClick={() => setSelectedKey(null)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!selectedKey ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-ios-lightgray text-gray-600 border-transparent'}`}
+          >
+            Todas las notas
+          </button>
+          {(musicalKeys ?? []).map((k) => (
             <button
-              onClick={() => { setShowKeyMenu((v) => !v); setShowCatMenu(false) }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm border
-                ${selectedKey ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 bg-ios-lightgray text-gray-600'}`}
+              key={k}
+              onClick={() => setSelectedKey(k)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedKey === k ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-ios-lightgray text-gray-600 border-transparent'}`}
             >
-              <span className="truncate">{selectedKey ?? 'Tonalidad'}</span>
-              <ChevronDownIcon className={`w-4 h-4 flex-shrink-0 ml-1 transition-transform ${showKeyMenu ? 'rotate-180' : ''}`} />
+              {k}
             </button>
-
-            {showKeyMenu && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden max-h-52 overflow-y-auto">
-                <button
-                  className="w-full text-left px-4 py-3 text-sm text-ios-red border-b border-gray-50"
-                  onClick={() => { setSelectedKey(null); setShowKeyMenu(false) }}
-                >
-                  Todas
-                </button>
-                {KEYS.map((k) => (
-                  <button
-                    key={k}
-                    className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 last:border-0
-                      ${selectedKey === k ? 'text-purple-700 font-medium' : 'text-gray-800'}`}
-                    onClick={() => { setSelectedKey(k); setShowKeyMenu(false) }}
-                  >
-                    {k}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          ))}
         </div>
 
         {/* Chips de filtros activos */}
@@ -138,7 +138,7 @@ export default function FilterScreen() {
       </div>
 
       {/* Lista */}
-      <div className="pb-2" onClick={() => { setShowCatMenu(false); setShowKeyMenu(false) }}>
+      <div className="pb-2" onClick={() => { setShowCatMenu(false) }}>
         {hymns === undefined ? (
           <Spinner />
         ) : hymns.length === 0 ? (
@@ -149,7 +149,7 @@ export default function FilterScreen() {
               {hymns.length} himno{hymns.length !== 1 ? 's' : ''}
             </div>
             {hymns.map((h) => <HymnItem key={h.id} hymn={h} />)}
-            <div className="h-2" />
+            <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
           </>
         )}
       </div>
