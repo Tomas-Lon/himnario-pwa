@@ -15,11 +15,13 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showBackupMenu, setShowBackupMenu] = useState(false)
   const [updateCheckMsg, setUpdateCheckMsg] = useState('')
   const [dataUpdateAvailable, setDataUpdateAvailable] = useState(false)
   const [appUpdateAvailable, setAppUpdateAvailable] = useState(false)
   const swRegistrationRef = useRef(null)
   const autoCheckTimerRef = useRef(null)
+  const importInputRef = useRef(null)
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -95,6 +97,7 @@ export default function App() {
   const handleApplyAppUpdate = () => {
     setMenuOpen(false)
     updateServiceWorker(true)
+    setTimeout(() => window.location.reload(), 350)
   }
 
   const handleGoHome = () => {
@@ -103,9 +106,76 @@ export default function App() {
     setSelectedListId(null)
   }
 
-  const handleReloadUi = () => {
-    setMenuOpen(false)
-    window.location.reload()
+  const handleExportListsFolders = async () => {
+    try {
+      const [carpetas, listas, listaHimnos] = await Promise.all([
+        db.carpetas.toArray(),
+        db.listas.toArray(),
+        db.listaHimnos.toArray(),
+      ])
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        carpetas,
+        listas,
+        listaHimnos,
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `backup-listas-carpetas-${Date.now()}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      setUpdateCheckMsg('Backup exportado')
+      setTimeout(() => setUpdateCheckMsg(''), 2200)
+    } catch {
+      setUpdateCheckMsg('Error al exportar')
+      setTimeout(() => setUpdateCheckMsg(''), 2200)
+    }
+  }
+
+  const handleOpenImport = () => {
+    importInputRef.current?.click()
+  }
+
+  const handleImportListsFolders = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      const raw = await file.text()
+      const data = JSON.parse(raw)
+      const carpetas = Array.isArray(data?.carpetas) ? data.carpetas : []
+      const listas = Array.isArray(data?.listas) ? data.listas : []
+      const listaHimnos = Array.isArray(data?.listaHimnos) ? data.listaHimnos : []
+
+      if (!confirm('Se reemplazarán listas y carpetas actuales por el backup. ¿Continuar?')) return
+
+      const hymnIds = new Set(await db.hymns.toCollection().primaryKeys())
+      const listaIds = new Set(listas.map((l) => l.id))
+      const safeRelations = listaHimnos.filter((r) => listaIds.has(r.listaId) && hymnIds.has(r.hymnId))
+
+      await db.transaction('rw', db.carpetas, db.listas, db.listaHimnos, async () => {
+        await db.listaHimnos.clear()
+        await db.listas.clear()
+        await db.carpetas.clear()
+
+        if (carpetas.length) await db.carpetas.bulkPut(carpetas)
+        if (listas.length) await db.listas.bulkPut(listas)
+        if (safeRelations.length) await db.listaHimnos.bulkPut(safeRelations)
+      })
+
+      setSelectedListId(null)
+      setActiveTab('lists')
+      setShowBackupMenu(false)
+      setMenuOpen(false)
+      setUpdateCheckMsg('Backup importado')
+      setTimeout(() => setUpdateCheckMsg(''), 2400)
+    } catch {
+      setUpdateCheckMsg('Backup inválido')
+      setTimeout(() => setUpdateCheckMsg(''), 2400)
+    }
   }
 
   useEffect(() => {
@@ -183,28 +253,14 @@ export default function App() {
           <div className="fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+8.5rem)] z-50 w-72 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-xs font-semibold text-gray-900">Herramientas</p>
-              <p className="text-[11px] text-gray-500 mt-0.5">Auto-chequeo cada 60s</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Acciones rápidas</p>
             </div>
-
-            <button
-              onClick={() => { setMenuOpen(false); checkForUpdates({ silent: false }) }}
-              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
-            >
-              Buscar ahora
-            </button>
-
-            <button
-              onClick={handleForceDataUpdate}
-              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
-            >
-              Forzar sincronización de datos
-            </button>
 
             <button
               onClick={handleApplyAppUpdate}
               className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
             >
-              {appUpdateAvailable || needRefresh ? 'Aplicar actualización de la app' : 'App ya actualizada'}
+              Forzar actualización de app
             </button>
 
             <button
@@ -215,19 +271,39 @@ export default function App() {
             </button>
 
             <button
-              onClick={handleReloadUi}
+              onClick={() => setShowBackupMenu((v) => !v)}
               className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
             >
-              Recargar interfaz
+              Exportar/Importar listas/carpetas
             </button>
 
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-[11px] text-gray-500 space-y-1">
-              <p>App: {appUpdateAvailable || needRefresh ? 'hay actualización' : 'actualizada'}</p>
-              <p>Datos: {dataUpdateAvailable ? 'hay cambios' : 'al día'}</p>
-            </div>
+            {showBackupMenu && (
+              <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                <button
+                  onClick={handleExportListsFolders}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-800 rounded-lg active:bg-gray-200"
+                >
+                  Exportar backup
+                </button>
+                <button
+                  onClick={handleOpenImport}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-800 rounded-lg active:bg-gray-200"
+                >
+                  Importar backup
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json"
+        className="hidden"
+        onChange={handleImportListsFolders}
+      />
 
       {/* Pantallas — se mantienen montadas para preservar estado */}
       <div className="w-full">

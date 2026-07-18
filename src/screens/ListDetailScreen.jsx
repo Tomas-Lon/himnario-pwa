@@ -8,6 +8,7 @@ import {
   TrashIcon,
   Bars3Icon,
   ArrowUpTrayIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline'
 import { db } from '../db/database'
 import HymnItem from '../components/HymnItem'
@@ -49,8 +50,10 @@ export default function ListDetailScreen({ listId, onBack }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [localOrder, setLocalOrder] = useState(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showEditListModal, setShowEditListModal] = useState(false)
 
   const lista = useLiveQuery(() => db.listas.get(listId), [listId])
+  const folders = useLiveQuery(() => db.carpetas.orderBy('id').toArray())
 
   const hymnsInList = useLiveQuery(async () => {
     const refs = await db.listaHimnos
@@ -92,6 +95,13 @@ export default function ListDetailScreen({ listId, onBack }) {
           >
             <ArrowUpTrayIcon className="w-4 h-4" />
             Exportar
+          </button>
+          <button
+            onClick={() => setShowEditListModal(true)}
+            className="flex items-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-3 py-2 rounded-lg active:opacity-70"
+          >
+            <PencilSquareIcon className="w-4 h-4" />
+            Editar
           </button>
           <button
             onClick={() => setShowAddModal(true)}
@@ -146,6 +156,14 @@ export default function ListDetailScreen({ listId, onBack }) {
           lista={lista}
           hymns={displayed}
           onClose={() => setShowExportMenu(false)}
+        />
+      )}
+
+      {showEditListModal && lista && (
+        <EditListInfoModal
+          lista={lista}
+          folders={folders ?? []}
+          onClose={() => setShowEditListModal(false)}
         />
       )}
     </div>
@@ -379,6 +397,82 @@ function ExportMenu({ lista, hymns, onClose }) {
               </button>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EditListInfoModal({ lista, folders, onClose }) {
+  const [name, setName] = useState(lista.nombre ?? '')
+  const [description, setDescription] = useState(lista.descripcion ?? '')
+  const [folderId, setFolderId] = useState(lista.folderId ?? null)
+
+  const handleSave = async () => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    await db.listas.update(lista.id, {
+      nombre: trimmed,
+      descripcion: description.trim(),
+      folderId,
+    })
+    onClose()
+  }
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+      <div className="w-full bg-white rounded-t-2xl pb-safe" onClick={(e) => e.stopPropagation()}>
+        <div className="px-4 pt-4 pb-3 border-b border-ios-separator">
+          <h2 className="text-base font-semibold text-gray-900 text-center">Editar lista</h2>
+        </div>
+        <div className="px-4 py-3 space-y-3">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Nombre</p>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-ios-blue"
+              placeholder="Nombre de la lista"
+            />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Descripción</p>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base resize-none focus:outline-none focus:ring-2 focus:ring-ios-blue"
+              placeholder="Descripción (opcional)"
+            />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Carpeta</p>
+            <select
+              value={folderId ?? ''}
+              onChange={(e) => setFolderId(e.target.value ? Number(e.target.value) : null)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none"
+            >
+              <option value="">Sin carpeta</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>{f.nombre}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="px-4 pb-4 flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-ios-lightgray text-sm font-medium text-gray-700 active:opacity-70"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 py-3 rounded-xl bg-ios-blue text-sm font-medium text-white active:opacity-80"
+          >
+            Guardar
+          </button>
         </div>
       </div>
     </div>
