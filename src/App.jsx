@@ -97,6 +97,17 @@ export default function App() {
     updateServiceWorker(true)
   }
 
+  const handleGoHome = () => {
+    setMenuOpen(false)
+    setActiveTab('home')
+    setSelectedListId(null)
+  }
+
+  const handleReloadUi = () => {
+    setMenuOpen(false)
+    window.location.reload()
+  }
+
   useEffect(() => {
     const run = () => checkForUpdates({ silent: true })
     run()
@@ -159,8 +170,8 @@ export default function App() {
 
   return (
     <div className="min-h-[100dvh] w-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="fixed right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex items-center gap-2">
-        {updateCheckMsg && <span className="text-[11px] text-gray-500 bg-white/80 backdrop-blur px-2 py-1 rounded-full shadow-sm">{updateCheckMsg}</span>}
+      <div className="fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-50 flex items-center gap-2">
+        {updateCheckMsg && <span className="text-[11px] text-gray-500 bg-white/90 backdrop-blur px-2 py-1 rounded-full shadow-sm">{updateCheckMsg}</span>}
         <button
           onClick={() => setMenuOpen((v) => !v)}
           className="w-9 h-9 rounded-full bg-white/85 backdrop-blur-md shadow-sm border border-gray-100 flex items-center justify-center text-gray-700 active:scale-95 transition-transform"
@@ -169,9 +180,9 @@ export default function App() {
           <EllipsisHorizontalIcon className="w-5 h-5" />
         </button>
         {menuOpen && (
-          <div className="fixed right-3 top-[calc(env(safe-area-inset-top)+3.5rem)] z-50 w-64 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
+          <div className="fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+8.5rem)] z-50 w-72 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-xs font-semibold text-gray-900">Actualizaciones</p>
+              <p className="text-xs font-semibold text-gray-900">Herramientas</p>
               <p className="text-[11px] text-gray-500 mt-0.5">Auto-chequeo cada 60s</p>
             </div>
 
@@ -193,7 +204,21 @@ export default function App() {
               onClick={handleApplyAppUpdate}
               className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
             >
-              Aplicar actualización de la app
+              {appUpdateAvailable || needRefresh ? 'Aplicar actualización de la app' : 'App ya actualizada'}
+            </button>
+
+            <button
+              onClick={handleGoHome}
+              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
+            >
+              Ir a Himnario
+            </button>
+
+            <button
+              onClick={handleReloadUi}
+              className="w-full text-left px-4 py-3 text-sm text-gray-800 active:bg-gray-50"
+            >
+              Recargar interfaz
             </button>
 
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-[11px] text-gray-500 space-y-1">
@@ -203,28 +228,6 @@ export default function App() {
           </div>
         )}
       </div>
-
-      {needRefresh && (
-        <div className="px-3 pt-2">
-          <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 flex items-center gap-2">
-            <p className="text-xs text-blue-800 flex-1">
-              Hay una nueva versión disponible.
-            </p>
-            <button
-              onClick={handleApplyAppUpdate}
-              className="text-xs font-semibold text-white bg-ios-blue px-3 py-1.5 rounded-lg active:opacity-80"
-            >
-              Actualizar
-            </button>
-            <button
-              onClick={() => setNeedRefresh(false)}
-              className="text-xs font-medium text-blue-700 px-2 py-1"
-            >
-              Luego
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Pantallas — se mantienen montadas para preservar estado */}
       <div className="w-full">
