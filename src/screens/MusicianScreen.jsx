@@ -90,7 +90,7 @@ export default function MusicianScreen() {
                 onTransposeKeyChange={handleTransposeChange}
               />
             ))}
-            <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
+            <div className="h-24" />
           </>
         )}
       </div>

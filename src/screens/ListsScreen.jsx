@@ -199,7 +199,7 @@ export default function ListsScreen({ onSelectList }) {
           </div>
         )}
 
-        <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
+        <div className="h-24" />
       </div>
     </div>
   )

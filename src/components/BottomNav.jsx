@@ -20,8 +20,8 @@ const TABS = [
 
 export default function BottomNav({ activeTab, onChange }) {
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 w-[min(calc(100%-1rem),32rem)] sm:w-[min(calc(100%-1.5rem),30rem)] -translate-x-1/2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
-      <div className="rounded-[2rem] border border-black/5 bg-white/90 backdrop-blur-2xl shadow-[0_12px_30px_rgba(32,32,32,0.12)] px-2 sm:px-2.5 py-2">
+    <nav className="fixed inset-x-0 bottom-0 z-[70] flex justify-center px-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pointer-events-none">
+      <div className="pointer-events-auto w-[min(100%,32rem)] sm:w-[min(100%,30rem)] rounded-[2rem] border border-black/5 bg-white/90 backdrop-blur-2xl shadow-[0_12px_30px_rgba(32,32,32,0.12)] px-2 sm:px-2.5 py-2">
         <div className="flex items-center justify-between gap-1">
         {TABS.map(({ id, label, Icon, ActiveIcon }) => {
           const active = activeTab === id

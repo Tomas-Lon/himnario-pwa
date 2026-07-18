@@ -143,7 +143,7 @@ export default function ListDetailScreen({ listId, onBack }) {
               onOrderSave={(newOrder) => saveOrder(listId, newOrder)}
               onRemove={removeHymn}
             />
-            <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
+            <div className="h-24" />
           </>
         )}
       </div>
@@ -622,7 +622,7 @@ function AddHymnModal({ listId, existingIds, onClose }) {
             Mostrando primeros 40 — escribe para buscar más
           </p>
         )}
-        <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />
+        <div className="h-24" />
       </div>
     </div>
   )
