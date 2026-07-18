@@ -125,7 +125,7 @@ function parseChordTxt(filePath) {
 function parseXlsx(filePath) {
   const wb = xlsx.readFile(filePath)
   const ws = wb.Sheets[wb.SheetNames[0]]
-  const rows = xlsx.utils.sheet_to_json(ws, { defval: '' })
+  const rows = xlsx.utils.sheet_to_json(ws, { defval: '', header: 1 })
 
   const cleanPrefixedTitle = (s) => String(s ?? '')
     .replace(/^\s*\d+\s*[\.)-]\s*/, '')
@@ -133,12 +133,15 @@ function parseXlsx(filePath) {
 
   const map = new Map()
   for (const row of rows) {
-    const title = cleanPrefixedTitle(
-      row.HIMNOS || row.TITULO || row.Titulo || row.Title || row.Column1 || '',
-    )
+    const titleValue = Array.isArray(row)
+      ? row[0]
+      : (row.HIMNOS || row.TITULO || row.Titulo || row.Title || row.Column1 || '')
+    const title = cleanPrefixedTitle(titleValue)
     if (!String(title).trim()) continue
-    const key = String(row.NOTA ?? row.Column2 ?? '').trim()
-    const style = String(row.ESTILO ?? row.Column3 ?? '').trim()
+    const keyValue = Array.isArray(row) ? row[1] : (row.NOTA ?? row.Column2 ?? '')
+    const styleValue = Array.isArray(row) ? row[2] : (row.ESTILO ?? row.Column3 ?? '')
+    const key = String(keyValue ?? '').trim()
+    const style = String(styleValue ?? '').trim()
     const normalized = normalizeTitle(title)
     const canonical = TITLE_ALIASES[normalized] ?? normalized
 
