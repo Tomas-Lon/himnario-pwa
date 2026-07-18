@@ -20,8 +20,8 @@ const TABS = [
 
 export default function BottomNav({ activeTab, onChange }) {
   return (
-    <nav className="fixed bottom-2 left-1/2 z-50 w-[min(calc(100%-1rem),32rem)] sm:w-[min(calc(100%-1.5rem),30rem)] -translate-x-1/2">
-      <div className="tab-bar rounded-[2rem] border border-black/5 bg-white/88 backdrop-blur-2xl shadow-[0_16px_36px_rgba(32,32,32,0.12)] px-2 sm:px-2.5 pt-2 pb-[max(env(safe-area-inset-bottom),4px)]">
+    <nav className="fixed bottom-0 left-1/2 z-50 w-[min(calc(100%-1rem),32rem)] sm:w-[min(calc(100%-1.5rem),30rem)] -translate-x-1/2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
+      <div className="rounded-[2rem] border border-black/5 bg-white/90 backdrop-blur-2xl shadow-[0_12px_30px_rgba(32,32,32,0.12)] px-2 sm:px-2.5 py-2">
         <div className="flex items-center justify-between gap-1">
         {TABS.map(({ id, label, Icon, ActiveIcon }) => {
           const active = activeTab === id
@@ -30,7 +30,7 @@ export default function BottomNav({ activeTab, onChange }) {
             <button
               key={id}
               onClick={() => onChange(id)}
-              className="relative flex-1 min-w-0 flex items-center justify-center py-1 transition-transform active:scale-95"
+              className="relative flex-1 min-w-0 flex items-center justify-center py-1.5 transition-transform active:scale-95"
             >
               {active && (
                 <span className="absolute inset-x-2 top-1 bottom-1 rounded-[1.15rem] bg-[#f2f3f7] shadow-[inset_0_0_0_1px_rgba(17,24,39,0.04)]" />

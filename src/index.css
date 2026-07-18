@@ -39,11 +39,6 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Tab bar con safe area */
-.tab-bar {
-  padding-bottom: max(env(safe-area-inset-bottom), 8px);
-}
-
 /* Letras de himno con mono para alinear acordes */
 .hymn-chords {
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
