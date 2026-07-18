@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { db } from '../db/database'
-import { STANDARD_KEYS } from '../utils/chordTransposer'
 import HymnItem from '../components/HymnItem'
 
 function normalize(str) {
@@ -13,9 +12,13 @@ function normalize(str) {
 }
 
 export default function MusicianScreen() {
-  const [selectedKey, setSelectedKey] = useState(null)
+  const [selectedKeysByHymn, setSelectedKeysByHymn] = useState({})
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const handleTransposeChange = (hymnId, key) => {
+    setSelectedKeysByHymn((prev) => ({ ...prev, [hymnId]: key }))
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
@@ -44,36 +47,11 @@ export default function MusicianScreen() {
       <div className="sticky top-0 z-30 bg-white px-4 pt-4 pb-3 border-b border-ios-separator shadow-[0_1px_0_rgba(0,0,0,0.02)]">
         <h1 className="text-2xl font-bold text-gray-900">Músicos</h1>
         <p className="text-xs text-gray-400 mt-0.5 mb-3">
-          Selecciona una tonalidad para transponer acordes automáticamente
+          Nota original visible por canción. Puedes transponer cada himno de forma individual al expandirlo.
         </p>
 
-        {/* Selector de tonalidad — scroll horizontal */}
-        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-          <button
-            onClick={() => setSelectedKey(null)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors
-              ${!selectedKey
-                ? 'bg-ios-blue text-white border-ios-blue'
-                : 'bg-ios-lightgray text-gray-600 border-transparent'}`}
-          >
-            Original
-          </button>
-          {STANDARD_KEYS.map((k) => (
-            <button
-              key={k}
-              onClick={() => setSelectedKey(k)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors
-                ${selectedKey === k
-                  ? 'bg-ios-blue text-white border-ios-blue'
-                  : 'bg-ios-lightgray text-gray-600 border-transparent'}`}
-            >
-              {k}
-            </button>
-          ))}
-        </div>
-
         {/* Buscador */}
-        <div className="relative mt-3">
+        <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
             type="search"
@@ -102,14 +80,14 @@ export default function MusicianScreen() {
           <>
             <div className="px-4 py-2 text-xs text-gray-400">
               {hymns.length} himno{hymns.length !== 1 ? 's' : ''} con acordes
-              {selectedKey && <> · transpuesto a <strong className="text-ios-blue">{selectedKey}</strong></>}
             </div>
             {hymns.map((h) => (
               <HymnItem
                 key={h.id}
                 hymn={h}
                 showChords
-                transposeKey={selectedKey}
+                transposeKey={selectedKeysByHymn[h.id] ?? null}
+                onTransposeKeyChange={handleTransposeChange}
               />
             ))}
             <div className="h-[calc(env(safe-area-inset-bottom)+5.5rem)]" />

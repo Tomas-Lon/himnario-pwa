@@ -5,7 +5,16 @@ import {
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline'
 import { db } from '../db/database'
-import { shareHymn, shareHymnWithChords, exportHymnAsPdf, exportHymnWithChordsPdf } from '../utils/exportUtils'
+import {
+  shareHymn,
+  shareHymnWithChords,
+  exportHymnAsPdf,
+  exportHymnAsTxt,
+  exportHymnWithChordsPdf,
+  exportHymnWithChordsTxt,
+  exportHymnChordsOnlyPdf,
+  exportHymnChordsOnlyTxt,
+} from '../utils/exportUtils'
 import { transpose } from '../utils/chordTransposer'
 
 /**
@@ -17,7 +26,13 @@ import { transpose } from '../utils/chordTransposer'
  *  transposeKey  — tonalidad para transposición (null = original)
  *  addToListButton — nodo React opcional para mostrar botón "añadir a lista"
  */
-export default function HymnItem({ hymn, showChords = false, transposeKey = null, addToListButton = null }) {
+export default function HymnItem({
+  hymn,
+  showChords = false,
+  transposeKey = null,
+  onTransposeKeyChange = null,
+  addToListButton = null,
+}) {
   const [expanded, setExpanded] = useState(false)
   const [note, setNote] = useState(hymn.note ?? '')
   const [toast, setToast] = useState(null)
@@ -38,8 +53,9 @@ export default function HymnItem({ hymn, showChords = false, transposeKey = null
     }, 600)
   }, [hymn.id])
 
+  const resolvedKey = transposeKey || hymn.musical_key
   const chords = showChords
-    ? transpose(hymn.musical_notation, transposeKey ?? hymn.musical_key)
+    ? transpose(hymn.musical_notation, resolvedKey)
     : null
 
   const handleShare = async () => {
@@ -61,6 +77,24 @@ export default function HymnItem({ hymn, showChords = false, transposeKey = null
     } else {
       exportHymnAsPdf(hymn)
     }
+  }
+
+  const handleTxt = () => {
+    if (showChords && chords) {
+      exportHymnWithChordsTxt(hymn, chords, resolvedKey)
+    } else {
+      exportHymnAsTxt(hymn)
+    }
+  }
+
+  const handleChordsOnlyPdf = () => {
+    if (!chords) return
+    exportHymnChordsOnlyPdf(hymn, chords, resolvedKey)
+  }
+
+  const handleChordsOnlyTxt = () => {
+    if (!chords) return
+    exportHymnChordsOnlyTxt(hymn, chords, resolvedKey)
   }
 
   return (
@@ -101,9 +135,28 @@ export default function HymnItem({ hymn, showChords = false, transposeKey = null
 
           {/* Acordes (solo modo músicos) */}
           {showChords && chords && (
-            <div className="hymn-chords text-xs bg-amber-50 text-amber-900 border border-amber-100 p-3 rounded-xl mb-4">
-              {chords}
-            </div>
+            <>
+              <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-blue-700 font-medium">
+                    Nota original: {hymn.musical_key ?? 'N/D'}
+                  </span>
+                  <select
+                    value={transposeKey ?? ''}
+                    onChange={(e) => onTransposeKeyChange?.(hymn.id, e.target.value || null)}
+                    className="text-xs border border-blue-200 bg-white rounded-lg px-2 py-1 focus:outline-none"
+                  >
+                    <option value="">Original</option>
+                    {['C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'].map((k) => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="hymn-chords text-xs bg-amber-50 text-amber-900 border border-amber-100 p-3 rounded-xl mb-4">
+                {chords}
+              </div>
+            </>
           )}
 
           {/* Letra */}
@@ -124,7 +177,7 @@ export default function HymnItem({ hymn, showChords = false, transposeKey = null
           </div>
 
           {/* Acciones */}
-          <div className="flex gap-2 mt-3">
+          <div className="flex flex-wrap gap-2 mt-3">
             <button
               onClick={handleShare}
               className="flex items-center gap-1.5 text-xs bg-blue-50 text-ios-blue font-medium px-3 py-2 rounded-lg active:opacity-70"
@@ -139,6 +192,28 @@ export default function HymnItem({ hymn, showChords = false, transposeKey = null
               <DocumentArrowDownIcon className="w-4 h-4" />
               PDF
             </button>
+            <button
+              onClick={handleTxt}
+              className="flex items-center gap-1.5 text-xs bg-gray-100 text-gray-600 font-medium px-3 py-2 rounded-lg active:opacity-70"
+            >
+              TXT
+            </button>
+            {showChords && chords && (
+              <>
+                <button
+                  onClick={handleChordsOnlyPdf}
+                  className="flex items-center gap-1.5 text-xs bg-amber-100 text-amber-800 font-medium px-3 py-2 rounded-lg active:opacity-70"
+                >
+                  Acordes PDF
+                </button>
+                <button
+                  onClick={handleChordsOnlyTxt}
+                  className="flex items-center gap-1.5 text-xs bg-amber-100 text-amber-800 font-medium px-3 py-2 rounded-lg active:opacity-70"
+                >
+                  Acordes TXT
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

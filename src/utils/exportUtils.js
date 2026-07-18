@@ -1,6 +1,20 @@
 import jsPDF from 'jspdf'
 import { transpose } from './chordTransposer'
 
+function safeFileName(name) {
+  return String(name ?? 'archivo').replace(/[^a-z0-9\-_áéíóúüñ]/gi, '_')
+}
+
+function downloadTxt(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 /**
  * Comparte un himno usando Web Share API (nativo en iOS Safari).
  * Si no está disponible, copia al portapapeles.
@@ -105,6 +119,15 @@ export function exportHymnAsPdf(hymn) {
   doc.save(filename)
 }
 
+export function exportHymnAsTxt(hymn) {
+  const text = [
+    `Nº ${hymn.numero ?? 'S/N'} — ${hymn.title ?? ''}`,
+    '─'.repeat(30),
+    hymn.lyrics ?? '',
+  ].join('\n')
+  downloadTxt(`himno-${hymn.numero ?? hymn.id}.txt`, text)
+}
+
 /**
  * Exporta un himno con acordes transpuestos como PDF.
  */
@@ -162,6 +185,61 @@ export function exportHymnWithChordsPdf(hymn, transposedChords) {
   doc.save(`himno-${hymn.numero ?? hymn.id}-acordes.pdf`)
 }
 
+export function exportHymnWithChordsTxt(hymn, transposedChords, keyLabel = null) {
+  const text = [
+    `Nº ${hymn.numero ?? 'S/N'} — ${hymn.title ?? ''}`,
+    keyLabel ? `Tonalidad: ${keyLabel}` : '',
+    '─'.repeat(30),
+    transposedChords ?? '',
+    '',
+    hymn.lyrics ?? '',
+  ].filter(Boolean).join('\n')
+  downloadTxt(`himno-${hymn.numero ?? hymn.id}-acordes.txt`, text)
+}
+
+export function exportHymnChordsOnlyPdf(hymn, transposedChords, keyLabel = null) {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const margin = 40
+  let y = 60
+
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text(`Nº ${hymn.numero ?? 'S/N'} — ${hymn.title ?? ''}`, margin, y)
+  y += 24
+
+  if (keyLabel) {
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'italic')
+    doc.text(`Tonalidad: ${keyLabel}`, margin, y)
+    y += 18
+  }
+
+  doc.setDrawColor(180)
+  doc.line(margin, y, pageW - margin, y)
+  y += 16
+
+  doc.setFont('courier', 'normal')
+  doc.setFontSize(10)
+  for (const line of String(transposedChords ?? '').split('\n')) {
+    if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 60 }
+    doc.text(line, margin, y)
+    y += 14
+  }
+
+  doc.save(`himno-${hymn.numero ?? hymn.id}-solo-acordes.pdf`)
+}
+
+export function exportHymnChordsOnlyTxt(hymn, transposedChords, keyLabel = null) {
+  const text = [
+    `Nº ${hymn.numero ?? 'S/N'} — ${hymn.title ?? ''}`,
+    keyLabel ? `Tonalidad: ${keyLabel}` : '',
+    '─'.repeat(30),
+    transposedChords ?? '',
+  ].filter(Boolean).join('\n')
+  downloadTxt(`himno-${hymn.numero ?? hymn.id}-solo-acordes.txt`, text)
+}
+
 /* ─────────────────────────────────────────────────────────────
    Exportar lista completa
 ───────────────────────────────────────────────────────────────*/
@@ -202,8 +280,19 @@ export function exportListAsPdf(lista, hymns) {
     y += 18
   })
 
-  const safeName = (lista.nombre ?? 'lista').replace(/[^a-z0-9\-_áéíóúüñ]/gi, '_')
+  const safeName = safeFileName(lista.nombre ?? 'lista')
   doc.save(`${safeName}.pdf`)
+}
+
+export function exportListAsTxt(lista, hymns) {
+  const lines = hymns.map((h, i) => `${i + 1}. Nº ${h.numero ?? h.id} — ${h.title ?? ''}`)
+  const text = [
+    `${lista.nombre ?? 'Lista'}`,
+    `${hymns.length} himno${hymns.length !== 1 ? 's' : ''}`,
+    '─'.repeat(30),
+    ...lines,
+  ].join('\n')
+  downloadTxt(`${safeFileName(lista.nombre ?? 'lista')}.txt`, text)
 }
 
 /** Lista: títulos + letra */
@@ -237,12 +326,28 @@ export function exportListWithLyricsPdf(lista, hymns) {
     y += 18
   }
 
-  const safeName = (lista.nombre ?? 'lista').replace(/[^a-z0-9\-_áéíóúüñ]/gi, '_')
+  const safeName = safeFileName(lista.nombre ?? 'lista')
   doc.save(`${safeName}-letra.pdf`)
 }
 
+export function exportListWithLyricsTxt(lista, hymns) {
+  const sections = hymns.map((h) => [
+    `Nº ${h.numero ?? h.id} — ${h.title ?? ''}`,
+    '─'.repeat(24),
+    h.lyrics ?? '',
+  ].join('\n'))
+  const text = [
+    `${lista.nombre ?? 'Lista'}`,
+    `${hymns.length} himno${hymns.length !== 1 ? 's' : ''}`,
+    '═'.repeat(30),
+    ...sections,
+  ].join('\n\n')
+  downloadTxt(`${safeFileName(lista.nombre ?? 'lista')}-letra.txt`, text)
+}
+
 /** Lista: títulos + notas/acordes + letra */
-export function exportListWithChordsPdf(lista, hymns, selectedKeys = {}) {
+export function exportListWithChordsPdf(lista, hymns, selectedKeys = {}, options = {}) {
+  const { transposeEnabled = true, chordsOnly = false } = options
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
   const margin = 40
@@ -259,7 +364,9 @@ export function exportListWithChordsPdf(lista, hymns, selectedKeys = {}) {
     doc.text(titleLines, margin, y)
     y += titleLines.length * 18 + 2
 
-    const exportKey = selectedKeys[h.id] ?? h.musical_key ?? null
+    const exportKey = transposeEnabled
+      ? (selectedKeys[h.id] ?? h.musical_key ?? null)
+      : (h.musical_key ?? null)
 
     if (exportKey) {
       doc.setFontSize(10)
@@ -275,7 +382,7 @@ export function exportListWithChordsPdf(lista, hymns, selectedKeys = {}) {
     y += 12
 
     const notatedChords = h.musical_notation
-      ? transpose(h.musical_notation, exportKey ?? h.musical_key)
+      ? transpose(h.musical_notation, exportKey)
       : ''
 
     if (notatedChords) {
@@ -291,18 +398,51 @@ export function exportListWithChordsPdf(lista, hymns, selectedKeys = {}) {
       y += 6
     }
 
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.setTextColor(0)
-    const lyricsLines = doc.splitTextToSize(h.lyrics ?? '', maxW)
-    for (const line of lyricsLines) {
-      if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 60 }
-      doc.text(line, margin, y)
-      y += 14
+    if (!chordsOnly) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(0)
+      const lyricsLines = doc.splitTextToSize(h.lyrics ?? '', maxW)
+      for (const line of lyricsLines) {
+        if (y > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); y = 60 }
+        doc.text(line, margin, y)
+        y += 14
+      }
     }
     y += 18
   }
 
-  const safeName = (lista.nombre ?? 'lista').replace(/[^a-z0-9\-_áéíóúüñ]/gi, '_')
-  doc.save(`${safeName}-notas.pdf`)
+  const safeName = safeFileName(lista.nombre ?? 'lista')
+  const suffix = `${chordsOnly ? 'solo-acordes' : 'notas'}-${transposeEnabled ? 'transpuesto' : 'original'}`
+  doc.save(`${safeName}-${suffix}.pdf`)
+}
+
+export function exportListWithChordsTxt(lista, hymns, selectedKeys = {}, options = {}) {
+  const { transposeEnabled = true, chordsOnly = false } = options
+  const blocks = hymns.map((h) => {
+    const exportKey = transposeEnabled
+      ? (selectedKeys[h.id] ?? h.musical_key ?? null)
+      : (h.musical_key ?? null)
+    const chords = h.musical_notation ? transpose(h.musical_notation, exportKey) : ''
+    const lines = [
+      `Nº ${h.numero ?? h.id} — ${h.title ?? ''}`,
+      exportKey ? `Tonalidad: ${exportKey}` : '',
+      '─'.repeat(24),
+      chords,
+    ]
+    if (!chordsOnly) {
+      lines.push('', h.lyrics ?? '')
+    }
+    return lines.filter(Boolean).join('\n')
+  })
+
+  const text = [
+    `${lista.nombre ?? 'Lista'}`,
+    `${hymns.length} himno${hymns.length !== 1 ? 's' : ''}`,
+    '═'.repeat(30),
+    ...blocks,
+  ].join('\n\n')
+
+  const suffix = `${chordsOnly ? 'solo-acordes' : 'notas'}-${transposeEnabled ? 'transpuesto' : 'original'}`
+  downloadTxt(`${safeFileName(lista.nombre ?? 'lista')}-${suffix}.txt`, text)
 }

@@ -14,8 +14,11 @@ import { db } from '../db/database'
 import HymnItem from '../components/HymnItem'
 import {
   exportListAsPdf,
+  exportListAsTxt,
   exportListWithLyricsPdf,
+  exportListWithLyricsTxt,
   exportListWithChordsPdf,
+  exportListWithChordsTxt,
 } from '../utils/exportUtils'
 import { STANDARD_KEYS } from '../utils/chordTransposer'
 
@@ -86,26 +89,28 @@ export default function ListDetailScreen({ listId, onBack }) {
           <button onClick={onBack} className="text-ios-blue p-1 -ml-1">
             <ChevronLeftIcon className="w-5 h-5" />
           </button>
-          <h1 className="flex-1 text-xl font-bold text-gray-900 truncate">
+          <h1 className="flex-1 text-lg sm:text-xl font-bold text-gray-900 truncate">
             {lista?.nombre ?? '...'}
           </h1>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <button
             onClick={() => setShowExportMenu(true)}
-            className="flex items-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-3 py-2 rounded-lg active:opacity-70"
+            className="flex items-center justify-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-2 py-2 rounded-lg active:opacity-70"
           >
             <ArrowUpTrayIcon className="w-4 h-4" />
             Exportar
           </button>
           <button
             onClick={() => setShowEditListModal(true)}
-            className="flex items-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-3 py-2 rounded-lg active:opacity-70"
+            className="flex items-center justify-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-2 py-2 rounded-lg active:opacity-70"
           >
             <PencilSquareIcon className="w-4 h-4" />
             Editar
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-3 py-2 rounded-lg active:opacity-70"
+            className="flex items-center justify-center gap-1 text-xs text-ios-blue font-medium bg-blue-50 px-2 py-2 rounded-lg active:opacity-70"
           >
             <PlusIcon className="w-4 h-4" />
             Añadir
@@ -289,6 +294,7 @@ function ExportMenu({ lista, hymns, onClose }) {
 
   const [showChordOptions, setShowChordOptions] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState({})
+  const [format, setFormat] = useState('pdf')
 
   const setKeyForHymn = (hymnId, key) => {
     setSelectedKeys((prev) => ({ ...prev, [hymnId]: key }))
@@ -298,22 +304,34 @@ function ExportMenu({ lista, hymns, onClose }) {
     {
       label: 'Sin letra',
       description: 'Solo números y títulos',
-      action: () => { exportListAsPdf(lista, hymns); onClose() },
+      action: () => {
+        if (format === 'pdf') exportListAsPdf(lista, hymns)
+        else exportListAsTxt(lista, hymns)
+        onClose()
+      },
     },
     {
       label: 'Con letra',
       description: 'Títulos y texto completo',
-      action: () => { exportListWithLyricsPdf(lista, hymns); onClose() },
+      action: () => {
+        if (format === 'pdf') exportListWithLyricsPdf(lista, hymns)
+        else exportListWithLyricsTxt(lista, hymns)
+        onClose()
+      },
     },
     {
-      label: 'Con letra y notas',
-      description: 'Acordes/notas + letra',
+      label: 'Acordes',
+      description: 'Original o transpuesto, con/sin letra',
       action: () => { setShowChordOptions(true) },
     },
   ]
 
-  const handleConfirmChordsExport = () => {
-    exportListWithChordsPdf(lista, hymns, selectedKeys)
+  const handleConfirmChordsExport = ({ transposeEnabled, chordsOnly }) => {
+    if (format === 'pdf') {
+      exportListWithChordsPdf(lista, hymns, selectedKeys, { transposeEnabled, chordsOnly })
+    } else {
+      exportListWithChordsTxt(lista, hymns, selectedKeys, { transposeEnabled, chordsOnly })
+    }
     onClose()
   }
 
@@ -328,11 +346,25 @@ function ExportMenu({ lista, hymns, onClose }) {
       >
         <div className="px-4 pt-4 pb-3 border-b border-ios-separator">
           <h2 className="text-base font-semibold text-gray-900 text-center">
-            Exportar lista como PDF
+            Exportar lista
           </h2>
           <p className="text-xs text-gray-400 text-center mt-0.5">
             {hymns.length} himno{hymns.length !== 1 ? 's' : ''} · {lista.nombre}
           </p>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setFormat('pdf')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border ${format === 'pdf' ? 'bg-ios-blue text-white border-ios-blue' : 'bg-ios-lightgray text-gray-600 border-transparent'}`}
+            >
+              PDF
+            </button>
+            <button
+              onClick={() => setFormat('txt')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border ${format === 'txt' ? 'bg-ios-blue text-white border-ios-blue' : 'bg-ios-lightgray text-gray-600 border-transparent'}`}
+            >
+              TXT
+            </button>
+          </div>
         </div>
         {!showChordOptions ? (
           <div className="px-4 py-2">
@@ -350,7 +382,7 @@ function ExportMenu({ lista, hymns, onClose }) {
         ) : (
           <div className="px-4 py-2 max-h-[55vh] overflow-y-auto space-y-2">
             <p className="text-xs text-gray-500 px-1">
-              Selecciona tonalidad por canción. Si no eliges, se usa la tonalidad por defecto del himno.
+              Selecciona tonalidad por canción para exportación transpuesta. Si no eliges, se usa la tonalidad por defecto.
             </p>
             {hymns.map((h) => {
               const currentKey = selectedKeys[h.id] ?? h.musical_key ?? ''
@@ -390,10 +422,32 @@ function ExportMenu({ lista, hymns, onClose }) {
                 Volver
               </button>
               <button
-                onClick={handleConfirmChordsExport}
+                onClick={() => handleConfirmChordsExport({ transposeEnabled: false, chordsOnly: false })}
+                className="flex-1 py-3 rounded-xl bg-ios-lightgray text-sm font-medium text-gray-700 active:opacity-80"
+              >
+                Original + letra
+              </button>
+              <button
+                onClick={() => handleConfirmChordsExport({ transposeEnabled: true, chordsOnly: false })}
                 className="flex-1 py-3 rounded-xl bg-ios-blue text-sm font-medium text-white active:opacity-80"
               >
-                Exportar
+                Transpuesto + letra
+              </button>
+            </div>
+          )}
+          {showChordOptions && (
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={() => handleConfirmChordsExport({ transposeEnabled: false, chordsOnly: true })}
+                className="flex-1 py-2.5 rounded-xl bg-amber-100 text-xs font-semibold text-amber-800 active:opacity-80"
+              >
+                Solo acordes (orig.)
+              </button>
+              <button
+                onClick={() => handleConfirmChordsExport({ transposeEnabled: true, chordsOnly: true })}
+                className="flex-1 py-2.5 rounded-xl bg-amber-200 text-xs font-semibold text-amber-900 active:opacity-80"
+              >
+                Solo acordes (transp.)
               </button>
             </div>
           )}
