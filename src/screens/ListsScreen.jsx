@@ -5,6 +5,7 @@ import {
   FolderIcon,
   TrashIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
   StarIcon,
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
@@ -16,6 +17,7 @@ export default function ListsScreen({ onSelectList }) {
   const [newFolderName, setNewFolderName] = useState('')
   const [newListName, setNewListName] = useState('')
   const [newListFolderId, setNewListFolderId] = useState(null)
+  const [collapsedFolders, setCollapsedFolders] = useState({})
 
   const folders = useLiveQuery(() => db.carpetas.orderBy('id').toArray())
   const listas = useLiveQuery(() => db.listas.orderBy('id').toArray())
@@ -57,6 +59,10 @@ export default function ListsScreen({ onSelectList }) {
 
   const toggleFavorite = async (lista) => {
     await db.listas.update(lista.id, { isFavorite: !lista.isFavorite })
+  }
+
+  const toggleFolder = (folderId) => {
+    setCollapsedFolders((prev) => ({ ...prev, [folderId]: !prev[folderId] }))
   }
 
   const noFolderLists = (listas ?? []).filter((l) => l.folderId == null)
@@ -139,18 +145,22 @@ export default function ListsScreen({ onSelectList }) {
         {/* Carpetas */}
         {(folders ?? []).map((folder) => {
           const listsInFolder = (listas ?? []).filter((l) => l.folderId === folder.id)
+          const isCollapsed = !!collapsedFolders[folder.id]
           return (
             <div key={folder.id} className="bg-white rounded-2xl overflow-hidden shadow-sm">
               {/* Cabecera carpeta */}
               <div className="flex items-center px-4 py-3 border-b border-gray-50">
-                <FolderIcon className="w-5 h-5 text-amber-500 mr-2 flex-shrink-0" />
-                <span className="flex-1 font-semibold text-gray-800 text-sm">{folder.nombre}</span>
-                <span className="text-xs text-gray-400 mr-2">{listsInFolder.length}</span>
-                <button onClick={() => deleteFolder(folder.id)} className="p-1">
+                <button onClick={() => toggleFolder(folder.id)} className="flex items-center flex-1 min-w-0 text-left">
+                  <FolderIcon className="w-5 h-5 text-amber-500 mr-2 flex-shrink-0" />
+                  <span className="flex-1 font-semibold text-gray-800 text-sm truncate">{folder.nombre}</span>
+                  <span className="text-xs text-gray-400 mr-2">{listsInFolder.length}</span>
+                  <ChevronDownIcon className={`w-4 h-4 text-gray-300 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+                </button>
+                <button onClick={() => deleteFolder(folder.id)} className="p-1 ml-2">
                   <TrashIcon className="w-4 h-4 text-gray-300" />
                 </button>
               </div>
-              {listsInFolder.length === 0 ? (
+              {isCollapsed ? null : listsInFolder.length === 0 ? (
                 <p className="text-xs text-gray-400 px-4 py-3">Vacía</p>
               ) : (
                 listsInFolder.map((lista) => (

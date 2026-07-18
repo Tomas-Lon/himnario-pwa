@@ -337,7 +337,7 @@ function ExportMenu({ lista, hymns, onClose }) {
 
   return (
     <div
-      className="absolute inset-0 z-50 flex flex-col justify-end bg-black/40"
+      className="fixed inset-0 z-[80] flex flex-col justify-end bg-black/40"
       onClick={onClose}
     >
       <div
@@ -474,7 +474,7 @@ function EditListInfoModal({ lista, folders, onClose }) {
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-end bg-black/40" onClick={onClose}>
       <div className="w-full bg-white rounded-t-2xl pb-safe" onClick={(e) => e.stopPropagation()}>
         <div className="px-4 pt-4 pb-3 border-b border-ios-separator">
           <h2 className="text-base font-semibold text-gray-900 text-center">Editar lista</h2>
@@ -566,7 +566,7 @@ function AddHymnModal({ listId, existingIds, onClose }) {
   }
 
   return (
-    <div className="absolute inset-0 bg-white z-50 flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="fixed inset-0 bg-white z-[80] flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* Header del modal */}
       <div className="px-4 pt-4 pb-3 border-b border-ios-separator">
         <div className="flex items-center gap-3 mb-3">
