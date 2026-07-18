@@ -198,8 +198,6 @@ export default function ListsScreen({ onSelectList }) {
             <p className="text-xs mt-1">Usa los botones de arriba para crear una</p>
           </div>
         )}
-
-        <div className="h-24" />
       </div>
     </div>
   )

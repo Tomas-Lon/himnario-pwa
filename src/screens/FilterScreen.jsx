@@ -149,7 +149,6 @@ export default function FilterScreen() {
               {hymns.length} himno{hymns.length !== 1 ? 's' : ''}
             </div>
             {hymns.map((h) => <HymnItem key={h.id} hymn={h} />)}
-            <div className="h-24" />
           </>
         )}
       </div>

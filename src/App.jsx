@@ -239,7 +239,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col bg-ios-lightgray" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div
+      className="min-h-[100dvh] w-full flex flex-col bg-ios-lightgray"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        '--bottom-nav-space': 'calc(env(safe-area-inset-bottom) + 5.25rem)',
+      }}
+    >
       <div className="fixed right-3 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-50 flex items-center gap-2">
         {updateCheckMsg && <span className="text-[11px] text-gray-500 bg-white/90 backdrop-blur px-2 py-1 rounded-full shadow-sm">{updateCheckMsg}</span>}
         <button
@@ -306,7 +312,7 @@ export default function App() {
       />
 
       {/* Pantallas — se mantienen montadas para preservar estado */}
-      <div className="w-full">
+      <div className="w-full pb-[var(--bottom-nav-space)]">
         <div className={`${activeTab === 'home' ? '' : 'hidden'}`}>
           <HomeScreen />
         </div>

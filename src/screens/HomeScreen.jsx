@@ -123,7 +123,6 @@ export default function HomeScreen() {
             {hymns.map((h) => (
               <HymnItem key={h.id} hymn={h} />
             ))}
-            <div className="h-24" />
           </>
         )}
       </div>
